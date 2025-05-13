@@ -1476,7 +1476,7 @@
   -->
   <string name="download_multi_select_title">%1$d terpilih</string>
   <!-- Text for the button to remove a single download item -->
-  <string name="download_delete_item_1" moz:removedIn="138" tools:ignore="UnusedResources">Hapus</string>
+  <string name="download_delete_item_1">Hapus</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Hapus</string>
   <!-- Text for the button to share the download URL -->
@@ -2820,8 +2820,6 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Saran Firefox</string>
-  <!-- Search suggestions title for trending searches. -->
-  <string name="trending_searches_header" moz:removedIn="137" tools:ignore="UnusedResources">Pencarian Tren</string>
   <!--
     Search suggestions title for trending search suggestions.
     %s is a placeholder for the name of the search engine providing the trending search suggestions.
