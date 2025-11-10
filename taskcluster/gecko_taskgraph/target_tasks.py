@@ -1747,3 +1747,12 @@ def target_tasks_test_info_xpcshell_timings_daily(
     full_task_graph, parameters, graph_config
 ):
     return ["source-test-file-metadata-test-info-xpcshell-timings-daily"]
+
+
+@register_target_task("staging_firefox")
+def target_staging_firefox(full_task_graph, parameters, graph_config):
+    labels = []
+    for task in full_task_graph.tasks.values():
+        if task.kind in ("build", "build-signing", "build-mac-signing"):
+            labels.append(task.label)
+    return labels

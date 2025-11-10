@@ -614,15 +614,15 @@ workers:
             provisioner: scriptworker-k8s
             implementation: scriptworker-signing
             os: linux
-            worker-type: '{trust-domain}-t-signing'
+            worker-type: '{trust-domain}-t-signing-dev'
         linux-signing:
             provisioner: scriptworker-k8s
             implementation: scriptworker-signing
             os: linux
             worker-type:
                 by-release-level:
-                    production: '{trust-domain}-3-signing'
-                    staging: '{trust-domain}-t-signing'
+                    production: '{trust-domain}-3-signing-dev'
+                    staging: '{trust-domain}-t-signing-dev'
         mac-depsigning:
             provisioner: scriptworker-prov-v1
             implementation: iscript
