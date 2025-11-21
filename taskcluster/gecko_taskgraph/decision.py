@@ -113,7 +113,7 @@ PER_PROJECT_PARAMETERS = {
     },
     # git projects
     "staging-firefox": {
-        "target_tasks_method": "default",
+        "target_tasks_method": "staging_firefox",
     },
     # the default parameters are used for projects that do not match above.
     "default": {
