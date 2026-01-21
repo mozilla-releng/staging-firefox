@@ -188,7 +188,10 @@ jobs:
       # specific builds.  (Ex: mozilla-beta has a "daily-releases" job
       # that currently runs 3 times a week.)
       when:
-          - {hour: 10, minute: 0}
+          - {minute: 0}
+          - {minute: 15}
+          - {minute: 30}
+          - {minute: 45}
 
     - name: linux64-clang-trunk-perf
       job:
