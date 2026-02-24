@@ -33,7 +33,7 @@ SETUP = {
         """
         echo "foo" > foo
         echo "bar" > bar
-        git init
+        git init -b master
         git config user.name "Testing McTesterson"
         git config user.email "<test@example.org>"
         git add *
@@ -49,7 +49,7 @@ SETUP = {
         """
         echo "foo" > foo
         echo "bar" > bar
-        git init
+        git init -b master
         git config user.name "Testing McTesterson"
         git config user.email "<test@example.org>"
         git add *
@@ -140,6 +140,12 @@ def repo(request):
     repo_test_fixture.execute_next_step()
 
     shutil.copytree(str(repo_dir), str(tmpdir / "remoterepo"))
+
+    if vcs in ("git", "jj"):
+        subprocess.check_call(
+            ["git", "config", "receive.denyCurrentBranch", "updateInstead"],
+            cwd=str(tmpdir / "remoterepo"),
+        )
 
     repo_test_fixture.execute_next_step()
 
