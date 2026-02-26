@@ -193,6 +193,20 @@ class GitRepository(Repository):
             return None
         return name.strip()
 
+    def get_remote_url(self, remote=None, push=False):
+        if not remote:
+            remote = self._run(
+                "config", f"branch.{self.branch}.remote", return_codes=[0, 1]
+            )
+            if not remote:
+                return None
+
+        cmd = ["remote", "get-url", remote]
+        if push:
+            cmd.append("--push")
+        url = self._run(*cmd, return_codes=[0, 2, 128])
+        return url.strip() if url else None
+
     def get_changed_files(self, diff_filter="ADM", mode="unstaged", rev=None):
         assert all(f.lower() in self._valid_diff_filter for f in diff_filter)
 
