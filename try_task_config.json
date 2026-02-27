@@ -1,0 +1,12 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "empty"
+            },
+            "tasks": []
+        }
+    },
+    "version": 2
+}
