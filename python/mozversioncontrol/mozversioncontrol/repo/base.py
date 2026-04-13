@@ -290,6 +290,18 @@ class Repository(abc.ABC):
         `force` whether to use a force push (default False).
         """
 
+    def add_note(
+        self,
+        note: str,
+        content: str,
+        commit: Optional[str] = None,
+    ):
+        """Attach a git note with `content` to `commit` (defaults to HEAD).
+
+        `notes_ref` is the notes namespace under refs/notes/.
+        """
+        raise NotImplementedError
+
     @abc.abstractmethod
     def push_to_try(
         self,
