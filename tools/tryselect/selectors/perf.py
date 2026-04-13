@@ -1296,9 +1296,9 @@ class PerfParser(CompareParser):
                     # Right now we would need to modify it to be able to do this.
                     # XXX Fix up the again selector for the perf selector (if it makes sense to)
                     push_data = push_to_try(
-                        "perf-again",
-                        f"{base_commit_message}",
-                        metrics,
+                        method="perf-again",
+                        msg=f"{base_commit_message}",
+                        metrics=metrics,
                         try_task_config=generate_try_task_config(
                             "fuzzy", selected_tasks, params=base_try_config_params
                         ),
@@ -1318,9 +1318,9 @@ class PerfParser(CompareParser):
                 else:
                     with redirect_stdout(log_processor):
                         push_to_try(
-                            "perf-again",
-                            f"{base_commit_message}",
-                            metrics,
+                            method="perf-again",
+                            msg=f"{base_commit_message}",
+                            metrics=metrics,
                             try_task_config=generate_try_task_config(
                                 "fuzzy", selected_tasks, params=base_try_config_params
                             ),
@@ -1350,9 +1350,9 @@ class PerfParser(CompareParser):
 
             if not push_to_vcs:
                 push_data = push_to_try(
-                    "perf",
-                    f"{new_commit_message}",
-                    metrics,
+                    method="perf",
+                    msg=f"{new_commit_message}",
+                    metrics=metrics,
                     # XXX Figure out if changing `fuzzy` to `perf` will break something
                     try_task_config=generate_try_task_config(
                         "fuzzy", selected_tasks, params=try_config_params
@@ -1370,9 +1370,9 @@ class PerfParser(CompareParser):
             else:
                 with redirect_stdout(log_processor):
                     push_to_try(
-                        "perf",
-                        f"{new_commit_message}",
-                        metrics,
+                        method="perf",
+                        msg=f"{new_commit_message}",
+                        metrics=metrics,
                         # XXX Figure out if changing `fuzzy` to `perf` will break something
                         try_task_config=generate_try_task_config(
                             "fuzzy", selected_tasks, params=try_config_params

@@ -172,9 +172,9 @@ def run(
     metrics.mach_try.task_config_generation_duration.stop()
     msg = f"scriptworker tests: {task_type}"
     return push_to_try(
-        "scriptworker",
-        message.format(msg=msg),
-        metrics,
+        method="scriptworker",
+        msg=message.format(msg=msg),
+        metrics=metrics,
         stage_changes=stage_changes,
         dry_run=dry_run,
         closed_tree=closed_tree,

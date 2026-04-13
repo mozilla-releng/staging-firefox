@@ -6,6 +6,7 @@ import json
 import os
 import sys
 from functools import cache
+from pprint import pprint
 from typing import Optional
 
 from mach.util import get_state_dir
@@ -13,6 +14,7 @@ from mozbuild.base import MozbuildObject
 from mozversioncontrol import MissingVCSExtension, get_repository_object
 
 from .lando import push_to_lando_try
+from .util.taskcluster import trigger_try_hook
 
 GIT_CINNABAR_NOT_FOUND = """
 Could not detect `git-cinnabar`.
@@ -52,12 +54,17 @@ their deadline. Consider selecting fewer than {LARGE_PUSH_THRESHOLD} tasks to sa
 get results faster.
 """
 
+VCS_REQUIRED_FOR_NOTES = """
+error: using Git notes requires pushing to VCS"
+""".strip()
+
 MAX_HISTORY = 10
 
 MACH_TRY_PUSH_TO_VCS = os.getenv("MACH_TRY_PUSH_TO_VCS") == "1"
 
 HG_TRY_URL = "ssh://hg.mozilla.org/try"
 MACH_TRY_REMOTE: Optional[str] = None
+USE_NOTES = False
 
 TREEHERDER_LANDO_TRY_RUN_URL = "https://treeherder.mozilla.org/jobs?repo=try&landoInstance={lando_instance}&landoCommitID={job_id}"
 
@@ -182,7 +189,9 @@ def _is_hg_try():
     return HG_TRY_URL in remote
 
 
-def push_to_try(
+
+
+def _push_via_commit(
     method,
     msg,
     metrics,
@@ -272,7 +281,59 @@ def push_to_try(
             raise
         sys.exit(1)
     finally:
-        if "try_task_config.json" in changed_files and os.path.isfile(
-            "try_task_config.json"
+        if (
+            not USE_NOTES
+            and "try_task_config.json" in changed_files
+            and os.path.isfile("try_task_config.json")
         ):
             os.remove("try_task_config.json")
+    pass
+
+
+def _push_via_note(try_task_config, dry_run=False, **kwargs):
+    # For VCS backends without an active branch (e.g. Jujutsu), derive a
+    # synthetic branch name from the commit SHA so the hook ID is unique.
+    if not (branch := vcs.branch):
+        branch = f"try/{vcs.head_ref}"
+
+    if dry_run:
+        print("Calculated try_task_config:")
+        pprint(try_task_config, indent=2)
+        return
+
+    note_ref = "refs/notes/decision-parameters"
+
+    vcs.add_note(note_ref, json.dumps(try_task_config))
+    vcs.push(MACH_TRY_REMOTE, ref=vcs.head_rev, dest_branch=branch, force=True)
+    vcs.push(MACH_TRY_REMOTE, ref=note_ref, force=True)
+
+    repo_url = vcs.get_remote_url(MACH_TRY_REMOTE, push=True) or MACH_TRY_REMOTE
+    assert repo_url
+
+    result = trigger_try_hook(
+        repo_url=repo_url,
+        branch=branch,
+        head_rev=vcs.head_rev,
+        base_rev=vcs.base_ref_as_commit(),
+        owner=vcs.get_user_email() or "nobody@noreply.mozilla.org",
+    )
+    task_id = result["status"]["taskId"]
+    print(
+        f"Follow the progress of your build: "
+        f"https://firefox-ci-tc.services.mozilla.com/tasks/{task_id}"
+    )
+
+
+def push_to_try(
+    try_task_config=None,
+    push_to_vcs=False,
+    **kwargs,
+):
+    if USE_NOTES and not push_to_vcs:
+        print(VCS_REQUIRED_FOR_NOTES)
+        sys.exit(1)
+
+    if USE_NOTES:
+        return _push_via_note(try_task_config, **kwargs)
+    else:
+        return _push_via_commit(try_task_config=try_task_config, push_to_vcs=push_to_vcs, **kwargs)

@@ -253,9 +253,9 @@ def test_push_to_try_routing(
             mock_vcs.try_commit.return_value.__exit__ = MagicMock(return_value=False)
 
         push.push_to_try(
-            "fuzzy",
-            "try: test",
-            mock_metrics,
+            method="fuzzy",
+            msg="try: test",
+            metrics=mock_metrics,
             push_to_vcs=push_to_vcs,
             dry_run=False,
         )

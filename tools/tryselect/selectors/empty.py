@@ -37,9 +37,9 @@ def run(
         msg = f"Selecting tasks with the '{method}' target method."
 
     return push_to_try(
-        "empty",
-        message.format(msg=msg),
-        metrics,
+        method="empty",
+        msg=message.format(msg=msg),
+        metrics=metrics,
         try_task_config=generate_try_task_config("empty", [], params=try_config_params),
         stage_changes=stage_changes,
         dry_run=dry_run,

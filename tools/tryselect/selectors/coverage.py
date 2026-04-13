@@ -436,9 +436,9 @@ def run(
     # Build commit message.
     msg = "try coverage - " + test_count_message
     return push_to_try(
-        "coverage",
-        message.format(msg=msg),
-        metrics,
+        method="coverage",
+        msg=message.format(msg=msg),
+        metrics=metrics,
         try_task_config=generate_try_task_config("coverage", tasks, try_config_params),
         stage_changes=stage_changes,
         dry_run=dry_run,

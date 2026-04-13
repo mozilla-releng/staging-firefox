@@ -150,9 +150,9 @@ def run(
     metrics.mach_try.task_config_generation_duration.stop()
     msg, try_task_config = json.loads(history[index])
     return push_to_try(
-        "again",
-        message.format(msg=msg),
-        metrics,
+        method="again",
+        msg=message.format(msg=msg),
+        metrics=metrics,
         try_task_config=try_task_config,
         **pushargs,
     )

@@ -49,6 +49,7 @@ def init(command_context):
     push.MAX_HISTORY = mach_context.settings["try"]["maxhistory"]
     push.MACH_TRY_REMOTE = mach_context.settings["try"]["pushremote"]
     task_config.SKIP_ARTIFACT_BUILD_CHECK = mach_context.settings["try"]["noartifact"]
+    push.USE_NOTES = push.USE_NOTES or mach_context.settings["try"]["use_notes"]
 
 
 @functools.cache

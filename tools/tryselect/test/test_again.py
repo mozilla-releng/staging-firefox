@@ -23,9 +23,9 @@ def test_try_again(monkeypatch):
 
     metrics = MagicMock()
     push.push_to_try(
-        "fuzzy",
-        "Fuzzy message",
-        metrics,
+        method="fuzzy",
+        msg="Fuzzy message",
+        metrics=metrics,
         try_task_config=push.generate_try_task_config(
             "fuzzy",
             ["foo", "bar"],
@@ -47,8 +47,8 @@ def test_try_again(monkeypatch):
 
     args, kwargs = again.run(metrics)
 
-    assert args[0] == "again"
-    assert args[1] == "Fuzzy message"
+    assert kwargs["method"] == "again"
+    assert kwargs["msg"] == "Fuzzy message"
 
     try_task_config = kwargs["try_task_config"]["parameters"].pop("try_task_config")
     assert sorted(try_task_config.get("tasks")) == sorted(["foo", "bar"])
@@ -64,9 +64,9 @@ def test_no_push_does_not_generate_history(tmpdir):
 
     metrics = MagicMock()
     push.push_to_try(
-        "fuzzy",
-        "Fuzzy",
-        metrics,
+        method="fuzzy",
+        msg="Fuzzy",
+        metrics=metrics,
         try_task_config=push.generate_try_task_config(
             "fuzzy",
             ["foo", "bar"],

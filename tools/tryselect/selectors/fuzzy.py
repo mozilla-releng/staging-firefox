@@ -268,9 +268,9 @@ def run(
     metrics.mach_try.task_config_generation_duration.stop()
 
     return push_to_try(
-        "fuzzy",
-        message.format(msg=msg),
-        metrics,
+        method="fuzzy",
+        msg=message.format(msg=msg),
+        metrics=metrics,
         try_task_config=try_task_config,
         stage_changes=stage_changes,
         dry_run=dry_run,

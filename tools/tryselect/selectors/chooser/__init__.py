@@ -108,9 +108,9 @@ def run(
 
     msg = f"Try Chooser Enhanced ({len(selected)} tasks selected)"
     return push_to_try(
-        "chooser",
-        message.format(msg=msg),
-        metrics,
+        method="chooser",
+        msg=message.format(msg=msg),
+        metrics=metrics,
         try_task_config=generate_try_task_config(
             "chooser", selected, params=try_config_params
         ),

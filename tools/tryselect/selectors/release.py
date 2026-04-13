@@ -164,9 +164,9 @@ def run(
     metrics.mach_try.task_config_generation_duration.stop()
     msg = f"staging release: {version}"
     return push_to_try(
-        "release",
-        message.format(msg=msg),
-        metrics,
+        method="release",
+        msg=message.format(msg=msg),
+        metrics=metrics,
         stage_changes=stage_changes,
         dry_run=dry_run,
         closed_tree=closed_tree,
