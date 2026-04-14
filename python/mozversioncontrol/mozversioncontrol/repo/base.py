@@ -135,7 +135,12 @@ class Repository(abc.ABC):
     @property
     @abc.abstractmethod
     def head_ref(self):
-        """Hash of HEAD revision."""
+        """Head reference."""
+
+    @property
+    @abc.abstractmethod
+    def head_rev(self):
+        """Head revision."""
 
     @property
     @abc.abstractmethod

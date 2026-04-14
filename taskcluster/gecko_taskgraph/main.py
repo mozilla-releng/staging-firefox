@@ -293,7 +293,7 @@ def show_taskgraph(options):
         # as best we can after we're done. In all known cases, using
         # branch or bookmark (which are both available on the VCS object)
         # as `branch` is preferable to a specific revision.
-        cur_ref = repo.branch or repo.head_ref[:12]
+        cur_ref = repo.branch or repo.head_rev[:12]
         cur_ref_file = cur_ref.replace("/", "_")
 
         diffdir = tempfile.mkdtemp()

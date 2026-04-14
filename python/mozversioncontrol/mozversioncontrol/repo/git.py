@@ -64,6 +64,10 @@ class GitRepository(Repository):
 
     @property
     def head_ref(self):
+        return self.branch or "HEAD"
+
+    @property
+    def head_rev(self):
         return self._run("rev-parse", "HEAD").strip()
 
     def is_cinnabar_repo(self) -> bool:
@@ -462,7 +466,7 @@ class GitRepository(Repository):
         This function returns a tuple of the ref of the new head and a function
         that can be called to remove the head from the local repository.
         """
-        current_head = self.head_ref
+        current_head = self.head_rev
 
         def data(content):
             return f"data {len(content)}\n{content}"
