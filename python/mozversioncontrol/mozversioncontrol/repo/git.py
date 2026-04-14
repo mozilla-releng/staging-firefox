@@ -365,7 +365,8 @@ class GitRepository(Repository):
                 args.append(f"{ref}:refs/heads/{dest_branch}")
             else:
                 args.append(ref)
-        self._run(*args)
+        (cmd, _, env) = self._process_run_args(*args)
+        subprocess.check_call(cmd, cwd=self.path, env=env)
 
     def push_to_try(
         self,
