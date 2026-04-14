@@ -64,7 +64,7 @@ MACH_TRY_PUSH_TO_VCS = os.getenv("MACH_TRY_PUSH_TO_VCS") == "1"
 
 HG_TRY_URL = "ssh://hg.mozilla.org/try"
 MACH_TRY_REMOTE: Optional[str] = None
-USE_NOTES = False
+USE_NOTES = True
 
 TREEHERDER_LANDO_TRY_RUN_URL = "https://treeherder.mozilla.org/jobs?repo=try&landoInstance={lando_instance}&landoCommitID={job_id}"
 
