@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s îți oferă controlul.</p> <p>Folosește-l ca browser privat: <ul> <li>Caută și navighează direct în aplicație</li> <li>Blochează elementele de urmărire (sau actualizează setările pentru a permite elementele de urmărire)</li> <li>Șterge pentru a elimina cookie-urile, precum și istoricul de căutare și navigare</li> </ul> </p> <p>%1$s este produs de Mozilla. Misiunea noastră este să promovăm un internet sănătos și deschis.<br/> <a href=\"%2$s\">Află mai multe</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s îți oferă controlul.</p>\n<p>Folosește-l ca browser privat:\n<ul>\n<li>Caută și navighează direct în aplicație</li>\n<li>Blochează elementele de urmărire (sau actualizează setările pentru a permite elementele de urmărire)</li>\n<li>Șterge pentru a elimina cookie-urile, precum și istoricul de căutare și navigare</li>\n</ul> </p>\n<p>%1$s este produs de Mozilla. Misiunea noastră este să promovăm un internet sănătos și deschis.<br/>\n<a href=\"%2$s\">Află mai multe</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Află mai multe</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -555,6 +562,8 @@
   <string name="tabs_tray_action_erase">Șterge istoricul de navigare</string>
   <!-- Label for the option in the Focus "tabs tray" to clos the other tabs except the current tab. -->
   <string name="tabs_tray_action_erase_other">Închide alte file</string>
+  <!-- Label for the option in the Focus "tabs tray" to add a new tab. -->
+  <string name="tabs_tray_action_add_new_tab">Adaugă o filă nouă</string>
   <!--
     If the user decides to open the current page in another browser and if Firefox is not installed then we show this
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
@@ -575,6 +584,21 @@
   <string name="security_popup_security_verified">Verificat de: %1$s</string>
   <!-- Content Description of Security Icon in toolbar -->
   <string name="site_security_icon_content_description">Securitatea site-ului</string>
+  <!--
+    %1$s will be replaced with the organization for which the certificate
+    used by the site was issued. For example, the certificate in use by
+    the site https://eidas.ec.europa.eu/ was issued to "The European
+    Commission".
+  -->
+  <string name="qualified_identity">Certificat emis către %1$s</string>
+  <!--
+    The European Union eIDAS Regulation specifies a type of certificate
+    called a "qualified website authentication certificate" (QWAC) and
+    requires that browsers identify and indicate such certificates. This
+    text was paraphrased from ETSI TS 119 411-5 V2.1.1 section 6.3 and
+    indicates that the website uses a QWAC.
+  -->
+  <string name="qualified_text">Calificat conform specificațiilor din Regulamentul (UE) 2024/1183.</string>
   <string name="preference_autocomplete_duplicate_url_error">URL-ul există deja</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">Caută în pagină</string>
@@ -875,7 +899,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Poate fi o problemă de configurare a serverului sau ar putea fi cineva care încearcă să uzurpe identitatea serverului. <br/><br/> Dacă te-ai conectat cu succes la server în trecut, eroarea ar putea fi temporară.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Ar putea fi cineva care încearcă să uzurpe identitatea site-ului și ar fi riscant să mergi mai departe.</label> <br><br> <label>%1$s nu are încredere în <b>%2$s</b> pentru că emitentul certificatului este necunoscut, certificatul este autosemnat sau serverul nu trimite certificatele intermediare corecte.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Ar putea fi cineva care încearcă să uzurpe identitatea site-ului și ar fi riscant să mergi mai departe.</label> <br><br>\n<label>%1$s nu are încredere în <b>%2$s</b> pentru că emitentul certificatului este necunoscut, certificatul este autosemnat sau serverul nu trimite certificatele intermediare corecte.</label>]]></string>
   <!--
     Sessions List
 
