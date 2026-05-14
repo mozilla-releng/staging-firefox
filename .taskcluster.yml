@@ -413,7 +413,7 @@ tasks:
                   in:
                       $if: >
                         eventType in ["action", "cron"]
-                        || (eventType == "push" && shortRef == "main")
+                        || (eventType == "push")
                         || (isPullRequest && eventAction in ["opened", "reopened", "synchronize"])
                       then:
                           $let:
@@ -474,7 +474,7 @@ tasks:
                                       - checks
                                       - $switch:
                                             'eventType == "push"':
-                                                - "tc-treeherder.v2.${project}.${headRev}"
+                                                - "tc-treeherder.v2.mozilla-releng/staging-firefox.${headRev}"
                                                 - "index.${trustDomain}.v2.${project}.latest.taskgraph.decision"
                                                 - "index.${trustDomain}.v2.${project}.revision.${headRev}.taskgraph.decision"
                                             'tasks_for == "action"':
