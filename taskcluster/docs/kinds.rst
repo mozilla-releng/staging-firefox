@@ -986,3 +986,16 @@ Generate instrumented apks used to run Macrobenchmark for Android apps.
 submit-nightly-release-metadata
 -------------------------------
 Submits metadata (product, channel, version, buildid, locales) about Nightly releases to Ship It.
+
+repository
+----------
+Throwaway, Try-only benchmark. Checks out the git tree and produces ``git archive HEAD |
+zstd`` checkout artifacts across a sweep of zstd configurations (levels 3/10/19, plus
+long-distance matching and ultra), timing the creation and recording the size of each.
+Consumed by the ``checkout-test-consume`` kind. Not intended to land.
+
+checkout-test-consume
+---------------------
+Throwaway, Try-only benchmark. Downloads the artifacts produced by the ``repository`` kind
+and times how long each zstd-config archive takes to expand into a working tree. Not
+intended to land.

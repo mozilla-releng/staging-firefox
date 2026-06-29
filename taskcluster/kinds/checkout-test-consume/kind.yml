@@ -1,0 +1,70 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - gecko_taskgraph.transforms.job:transforms
+    - gecko_taskgraph.transforms.task:transforms
+
+kind-dependencies:
+    - repository
+
+task-defaults:
+    worker-type: t-linux-docker-amd
+    run-on-projects: []
+    worker:
+        docker-image: {in-tree: "lint"}
+        max-run-time: 3600
+        artifacts:
+            - type: directory
+              name: public/build
+              path: /builds/worker/artifacts
+
+tasks:
+    expand:
+        description: "Expand each zstd-config git-archive artifact and time it"
+        treeherder: {symbol: "cb(expand)", kind: other, tier: 3, platform: linux64/opt}
+        dependencies:
+            repository: repository-archive
+        fetches:
+            repository:
+                - artifact: archive-l10.tar.zst
+                  extract: false
+                - artifact: archive-l10long27.tar.zst
+                  extract: false
+                - artifact: archive-l10long31.tar.zst
+                  extract: false
+        run:
+            using: run-task
+            checkout: false
+            command: |
+                ART=/builds/worker/artifacts
+                RES=$ART/bench-consume-results.txt
+                mkdir -p "$ART"
+                : > "$RES"
+
+                # Expand each variant into its own dir, time it, then remove it before the
+                # next so peak disk stays at ~one extracted tree. Long-window variants pass
+                # --long=27 on decompress. Download time per artifact is logged by
+                # fetch-content earlier in this log.
+                expand() {
+                  name=$1; shift
+                  src="$MOZ_FETCHES_DIR/archive-$name.tar.zst"
+                  dest="/builds/worker/extracted/$name"
+                  mkdir -p "$dest"
+                  printf '%s artifact_bytes=%d\n' "$name" "$(stat -c %s "$src")" | tee -a "$RES"
+                  t0=$(date +%s%N)
+                  zstd -d -T0 "$@" -c "$src" | tar -xf - -C "$dest"
+                  t1=$(date +%s%N)
+                  ms=$(( (t1 - t0) / 1000000 ))
+                  printf 'BENCH %s expand_seconds=%d.%03d files=%d\n' "$name" "$((ms/1000))" "$((ms%1000))" "$(find "$dest" -type f | wc -l)" | tee -a "$RES"
+                  rm -rf "$dest"
+                }
+
+                expand l10
+                expand l10long27 --long=27
+                expand l10long31 --long=31
+
+                echo "===== SUMMARY ====="; cat "$RES"

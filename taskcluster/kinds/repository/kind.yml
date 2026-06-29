@@ -1,0 +1,67 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - gecko_taskgraph.transforms.job:transforms
+    - gecko_taskgraph.transforms.task:transforms
+
+task-defaults:
+    worker-type: t-linux-docker-amd
+    run-on-projects: []        # never auto-runs on any branch; still selectable on Try
+    worker:
+        docker-image: {in-tree: "lint"}
+        max-run-time: 3600
+        artifacts:
+            - type: directory
+              name: public/build
+              path: /builds/worker/artifacts
+
+tasks:
+    archive:
+        description: "Create git-archive checkout artifacts across zstd configs and time each"
+        treeherder:
+            symbol: cb(create)
+            kind: other
+            tier: 3
+            platform: linux64/opt
+        run:
+            using: run-task
+            checkout: true
+            cwd: '{checkout}'
+            command: |
+                ART=/builds/worker/artifacts
+                RES=$ART/bench-create-results.txt
+                mkdir -p "$ART"
+                : > "$RES"
+
+                # This benchmark requires a git checkout. Fail fast if there is no .git
+                # (e.g. on an hg-based push) rather than silently synthesizing one.
+                if [ ! -d .git ]; then
+                  echo "ERROR: not a git checkout (.git missing); this benchmark requires git" >&2
+                  exit 1
+                fi
+
+                echo "tree_files=$(find . -type f | wc -l)" | tee -a "$RES"
+                echo "tree_size=$(du -sh . | cut -f1)" | tee -a "$RES"
+
+                # Each config runs the full "git archive HEAD | zstd <opts>" pipeline (the
+                # real create operation) and is timed end to end. The git archive read is a
+                # roughly constant offset across configs, so it doesn't distort the ranking.
+                bench() {
+                  name=$1; shift
+                  out="$ART/archive-$name.tar.zst"
+                  t0=$(date +%s%N)
+                  git archive --format=tar HEAD | zstd -T0 "$@" -q -o "$out"
+                  t1=$(date +%s%N)
+                  ms=$(( (t1 - t0) / 1000000 ))
+                  printf 'BENCH %s create_seconds=%d.%03d bytes=%d\n' "$name" "$((ms/1000))" "$((ms%1000))" "$(stat -c %s "$out")" | tee -a "$RES"
+                }
+
+                bench l10 -10
+                bench l10long27 -10 --long=27
+                bench l10long31 -10 --long=31
+
+                echo "===== SUMMARY ====="; cat "$RES"
