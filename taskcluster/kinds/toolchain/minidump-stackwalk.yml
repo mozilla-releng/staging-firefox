@@ -99,7 +99,7 @@ linux64-breakpad-injector:
             - 'moz.configure'
             - 'toolkit/crashreporter'
             - 'toolkit/crashreporter/google-breakpad/src/processor'
-            - 'tools/crashreporter/'
+            - 'tools/crashreporter'
     treeherder:
         symbol: TL(injector)
     fetches:
