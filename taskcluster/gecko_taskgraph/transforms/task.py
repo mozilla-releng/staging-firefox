@@ -28,6 +28,7 @@ from taskgraph import MAX_DEPENDENCIES
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.transforms.task import payload_builder, payload_builders
 from taskgraph.util.copy import deepcopy
+from taskgraph.util.hash import hash_path
 from taskgraph.util.keyed_by import evaluate_keyed_by, keymatch
 from taskgraph.util.schema import (
     LegacySchema,
@@ -47,7 +48,6 @@ from gecko_taskgraph.transforms.job.common import get_expiration
 from gecko_taskgraph.util import docker as dockerutil
 from gecko_taskgraph.util.attributes import TRUNK_PROJECTS
 from gecko_taskgraph.util.chunking import TEST_VARIANTS
-from gecko_taskgraph.util.hash import hash_path
 from gecko_taskgraph.util.partners import get_partners_to_be_published
 from gecko_taskgraph.util.scriptworker import BALROG_ACTIONS
 from gecko_taskgraph.util.workertypes import get_worker_type, worker_type_implementation

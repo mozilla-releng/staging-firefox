@@ -143,12 +143,12 @@ linux64-mar-tools:
         toolchain-artifact: public/build/mar-tools.tar.zst
         resources:
             - build/moz.configure
-            - modules/libmar/
+            - modules/libmar
             - moz.configure
-            - other-licenses/bsdiff/
-            - other-licenses/nsis/Contrib/CityHash/cityhash/
-            - toolkit/mozapps/update/updater/bspatch/
-            - tools/update-packaging/
+            - other-licenses/bsdiff
+            - other-licenses/nsis/Contrib/CityHash/cityhash
+            - toolkit/mozapps/update/updater/bspatch
+            - tools/update-packaging
 
 linux64-zucchini-bin:
     description: "zucchini bin toolchain build"
@@ -163,12 +163,12 @@ linux64-zucchini-bin:
         sparse-profile: null
         toolchain-artifact: public/build/zucchini.tar.xz
         resources:
-            - build/moz.configure/
+            - build/moz.configure
             - moz.configure
-            - third_party/abseil-cpp/
-            - third_party/googletest/
-            - third_party/zucchini/
-            - tools/zucchini/
+            - third_party/abseil-cpp
+            - third_party/googletest
+            - third_party/zucchini
+            - tools/zucchini
 
 linux64-msix-packaging:
     description: "msix-packaging build"
