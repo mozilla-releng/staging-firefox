@@ -25,6 +25,10 @@ from taskgraph.taskgraph import TaskGraph
 from taskgraph.util import json
 from taskgraph.util.python_path import find_object
 from taskgraph.util.taskcluster import get_artifact
+from taskgraph.util.taskgraph import (
+    find_decision_task,
+    find_existing_tasks_from_previous_kinds,
+)
 from taskgraph.util.vcs import get_repository
 from taskgraph.util.yaml import load_yaml
 
@@ -37,7 +41,6 @@ from .util.bugbug import push_schedules
 from .util.hg import get_hg_revision_metadata
 from .util.partials import populate_release_history
 from .util.taskcluster import insert_index
-from .util.taskgraph import find_decision_task, find_existing_tasks_from_previous_kinds
 
 logger = logging.getLogger(__name__)
 

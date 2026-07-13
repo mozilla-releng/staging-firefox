@@ -871,7 +871,7 @@ def test_release_promotion(
     monkeypatch.setenv("TASK_ID", action_task_id)
 
     responses.get(
-        f"{ROOT_URL}/api/index/v1/task/gecko.v2.try.revision.abcdef.taskgraph.decision",
+        f"{ROOT_URL}/api/index/v1/task/gecko.v2.try.pushlog-id.1.decision",
         status=200,
         json={"taskId": "decision-task-id"},
     )
