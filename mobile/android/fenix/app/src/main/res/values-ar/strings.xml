@@ -23,6 +23,8 @@
   <string name="content_description_normal_browsing">التصفّح العادي</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">ابحث أو أدخِل عنوانا</string>
+  <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+  <string name="search_hint_short">ابحث</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">البحث في الويب</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -70,7 +72,7 @@
   <!-- Text for the menu button to remove a recently saved bookmark from the user's home screen -->
   <string name="home_bookmarks_menu_item_remove">إزالة</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="about_content">أنتج %1$s Mozilla.</string>
+  <string name="about_content" tools:ignore="BrandUsage">أنتج %1$s Mozilla.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">اعتقادات خاطئة شائعة حول التصفح الخاص</string>
   <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
@@ -101,7 +103,7 @@
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">الانتقال إلى الإعدادات</string>
   <!-- Text for the negative action button -->
-  <string name="open_in_app_cfr_negative_button_text">رفض</string>
+  <string name="open_in_app_cfr_negative_button_text">أهمِل</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
   <!--
@@ -115,13 +117,13 @@
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">الانتقال إلى الإعدادات</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
-  <string name="camera_permissions_needed_negative_button_text">رفض</string>
+  <string name="camera_permissions_needed_negative_button_text">أهمِل</string>
   <!-- Text for the banner message to tell users about our auto close feature. -->
   <string name="tab_tray_close_tabs_banner_message">ضبط التبويبات المفتوحة لتُغلَق من تلقاء نفسها إن لم تُعرض منذ اليوم أو الأسبوع أو الشهر الماضي.</string>
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
   <string name="tab_tray_close_tabs_banner_positive_button_text">خيارات العرض</string>
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
-  <string name="tab_tray_close_tabs_banner_negative_button_text">رفض</string>
+  <string name="tab_tray_close_tabs_banner_negative_button_text">أهمِل</string>
   <!-- Text for the banner message to tell users about our inactive tabs feature. -->
   <string name="tab_tray_inactive_onboarding_message">سيتم نقل التبويبات التي لم تعرضها منذ أسبوعين إلى هنا.</string>
   <!-- Text for the action link to go to Settings for inactive tabs. -->
@@ -147,6 +149,8 @@
   <string name="home_screen_shortcut_open_new_private_tab_2">تبويب خاص جديد</string>
   <!-- Shortcut action to open Passwords screen -->
   <string name="home_screen_shortcut_passwords">كلمات المرور</string>
+  <!-- Shortcut action to open uninstall survey -->
+  <string name="home_screen_shortcut_uninstall_survey">إلغاء التثبيت، لمَ؟</string>
   <!--
     Recent Tabs
 
@@ -284,7 +288,7 @@
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">حفظ كملف PDF</string>
   <!-- Browser menu label for moving the current private tab to a non-private tab -->
-  <string name="browser_menu_move_to_non_private_tab">انتقل إلى لسان غير خاص</string>
+  <string name="browser_menu_move_to_non_private_tab">انتقل إلى تبويب غير خاص</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">ترجمة الصفحة</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
@@ -310,7 +314,7 @@
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">سريع وخاص وصٌنع خصيصًا لك.</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss_promotion">تجاهل العرض الترويجي</string>
+  <string name="browser_menu_default_banner_dismiss_promotion">أهمِل العرض الترويجي</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
   <string name="browser_menu_recommended_extensions_content_description">المزيد من المعلومات</string>
   <!--
@@ -330,21 +334,9 @@
   <!--
     Browser Toolbar
 
-    Content description for the Home screen button on the browser toolbar
-  -->
-  <string name="browser_toolbar_home">الشاشة الرئيسية</string>
-  <!--
-    Browser Toolbar
-
     Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
   -->
   <string name="browser_toolbar_translate">ترجِم الصفحة</string>
-  <!--
-    Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
-    %1$s is the name of the language that is displayed in the original page. (For example: English)
-    %2$s is the name of the language which the page was translated to. (For example: French)
-  -->
-  <string name="browser_toolbar_translated_successfully">ترجمت الصفحة من %1$s إلى %2$s.</string>
   <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
   <string name="browser_toolbar_summarize_cfr_description">هزّ جهازك لتلخيص الصفحة في ثوانٍ معدودة. ⚡️</string>
   <!--
@@ -358,7 +350,7 @@
   <!-- Content description for the translate toolbar action that opens the translations dialog. -->
   <string name="translation_toolbar_expand_action">فتح ورقة الترجمة</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
-  <string name="translation_toolbar_close_action">تجاهل الرسالة</string>
+  <string name="translation_toolbar_close_action">أهمِل الرسالة</string>
   <!--
     Page summaries
 
@@ -375,8 +367,6 @@
   <string name="ai_controls_banner_headline">لديك دائمًا خيار في %s</string>
   <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
   <string name="ai_controls_banner_supporting_text_2">ويشمل ذلك ما إذا كان ينبغي استخدام الميزات المحسّنة بالذكاء الاصطناعي. %s</string>
-  <!-- Supporting text for the AI controls banner -->
-  <string name="ai_controls_banner_supporting_text">ويشمل ذلك ما إذا كان ينبغي استخدام الميزات المحسّنة بالذكاء الاصطناعي.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">اطّلع على المزيد</string>
   <!-- Title for the block AI enhancements toggle -->
@@ -424,12 +414,6 @@
   <!--
     Search Fragment
 
-    Button in the search view that lets a user search by scanning a QR code
-  -->
-  <string name="search_scan_button_2">امسح رمز QR</string>
-  <!--
-    Search Fragment
-
     Button in the search view that lets a user navigate to the site in their clipboard
   -->
   <string name="awesomebar_clipboard_title">املأ الرابط من الحافظة</string>
@@ -464,68 +448,14 @@
   <string name="search_suggestions_delete_history_item_snackbar">حذف %1$s من سجل التصفح</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">حذف سجل هذ البحث</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">ابقَ في %1$s</string>
   <!--
     Home onboarding
 
     Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
   <string name="onboarding_home_content_description_close_button">إغلاق</string>
-  <!--
-    Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
-
-    Description for learning more about our privacy notice.
-  -->
-  <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">بيان Firefox للخصوصية</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_2">نحن نحب إبقاءك آمنًا</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_3">يساعدك متصفحنا الذي تدعمه مؤسستنا غير الربحية على منع الشركات من متابعتك سرًا عبر الويب.</string>
-  <!-- Text for the button to set firefox as default browser on the device -->
-  <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">اضبطه ليكون المتصفّح المبدئي</string>
-  <!-- Text for the button dismiss the screen and move on with the flow -->
-  <string name="juno_onboarding_default_browser_negative_button" tools:ignore="UnusedResources">ليس الآن</string>
-  <!-- Title for sign in to sync screen. -->
-  <string name="juno_onboarding_sign_in_title_2">حافظ على تشفير بياناتك عند التنقل بين الأجهزة</string>
-  <!--
-    Description for sign in to sync screen. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_sign_in_description_3" tools:ignore="BrandUsage">يُشفّر Firefox كلمات مرورك وعلاماتك المرجعية وغيرها من البيانات أثناء المزامنة.</string>
-  <!-- Text for the button to sign in to sync on the device -->
-  <string name="juno_onboarding_sign_in_positive_button" tools:ignore="UnusedResources">لِج</string>
-  <!-- Text for the button dismiss the screen and move on with the flow -->
-  <string name="juno_onboarding_sign_in_negative_button" tools:ignore="UnusedResources">ليس الآن</string>
-  <!--
-    Title for enable notification permission screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_enable_notifications_title_nimbus_2" tools:ignore="BrandUsage">تساعدك الإشعارات على أن تكون أأمن مع Firefox</string>
-  <!--
-    Description for enable notification permission screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_enable_notifications_description_nimbus_2" tools:ignore="BrandUsage">شارك علامات التبويب بأمان بين أجهزتك واكتشف المزيد من مزايا الخصوصية في Firefox.</string>
-  <!-- Text for the button to request notification permission on the device -->
-  <string name="juno_onboarding_enable_notifications_positive_button" tools:ignore="UnusedResources">فعّل التنبيهات</string>
-  <!-- Text for the button dismiss the screen and move on with the flow -->
-  <string name="juno_onboarding_enable_notifications_negative_button" tools:ignore="UnusedResources">ليس الآن</string>
-  <!--
-    Title for add search widget screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_add_search_widget_title" tools:ignore="BrandUsage,UnusedResources">جرب أداة البحث في فايرفوكس</string>
-  <!--
-    Description for add search widget screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_add_search_widget_description" tools:ignore="BrandUsage,UnusedResources">أضف Firefox إلى شاشتك الرئيسية لوصول أسرع إلى متصفحك الخاص الذي يحظر أدوات التعقب بين المواقع.</string>
-  <!--
-    Text for the button to add search widget on the device used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">إضافة أداة Firefox</string>
-  <!-- Text for the button to dismiss the screen and move on with the flow -->
-  <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">ليس الآن</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">ساعدنا في جعل Firefox أفضل</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -545,17 +475,13 @@
   <!-- Button text to reopen firefox after the crash is processed %s is the name of the app (for example "Firefox") -->
   <string name="startup_crash_restart">إعادة فتح %s</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
-  <string name="onboarding_preferences_dialog_usage_data_title">إرسال البيانات التقنية والتفاعلية إلى Mozilla</string>
+  <string name="onboarding_preferences_dialog_usage_data_title" tools:ignore="BrandUsage">إرسال البيانات التقنية والتفاعلية إلى Mozilla</string>
   <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">تساعد البيانات المتعلقة بجهازك وتكوينات الأجهزة وكيفية استخدامك لـ Firefox في تطوير الميزات ورفع كفاءة الأداء والاستقرار لكل المستخدمين.</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">اطلع على المزيد</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">تم</string>
   <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">مرحبا بكم في Firefox</string>
-  <!-- Terms of service sub header label. -->
-  <string name="onboarding_terms_of_service_sub_header_2">تصفح الويب بسرعة وأمان</string>
-  <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">متابعة</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">بالاستمرار فإنك توافق على %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
@@ -623,16 +549,6 @@
   <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">ابدأ المزامنة</string>
   <!-- Sync onboarding redesign negative button text. -->
   <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">ليس الآن</string>
-  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">ساعدنا في تنمية Firefox</string>
-  <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">مشاركتك لقصة اكتشافك لـ Firefox واستخدامك له تساعدنا في تعريف المزيد من الأشخاص بمتصفحنا.</string>
-  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_opt_out_checkbox">شارك البيانات مع شركاء تكنولوجيا التسويق لـ Mozilla. نحن لا نبيع هذه البيانات أبداً، ولا نستخدمها لاستهدافك بالإعلانات.</string>
-  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">كيف نستخدم البيانات</string>
-  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">تأكيد وبدء التصفح</string>
   <!-- Marketing onboarding page title variant. “One last thing” refers to the final step or action in the onboarding process that we’re asking users to take before they can start using the browser. -->
   <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">بقي أمر واحد فقط</string>
   <!-- Marketing onboarding page body variant. 'Firefox' is intentionally hardcoded. -->
@@ -712,12 +628,12 @@
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">شارك معلومات حول كيفية اكتشافك واستخدامك لـ Firefox مع شركاء Mozilla التسويقيين. نحن لا نبيع هذه البيانات أبدًا.</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">يمكنك مساعدتنا في الوصول إلى المزيد من الأشخاص من خلال السماح لـ Mozilla بإبلاغ القنوات التي نروج فيها لمتصفح Firefox بأنك مستخدم لمتصفح Firefox.</string>
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage,UnusedResources">يمكنك مساعدتنا في الوصول إلى المزيد من الأشخاص من خلال السماح لـ Mozilla بإبلاغ القنوات التي نروج فيها لمتصفح Firefox بأنك مستخدم لمتصفح Firefox.</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
   -->
-  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">يمكنك مساعدتنا في الوصول إلى المزيد من الأشخاص من خلال السماح لـ Mozilla بإبلاغ المنصة التي أتيت منها بأنك تستخدم Firefox.</string>
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage,UnusedResources">يمكنك مساعدتنا في الوصول إلى المزيد من الأشخاص من خلال السماح لـ Mozilla بإبلاغ المنصة التي أتيت منها بأنك تستخدم Firefox.</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
@@ -729,10 +645,20 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">ساعدنا في الوصول إلى المزيد من الأشخاص من خلال السماح لـ Mozilla بإبلاغ المنصة التي أتيت منها بأنك تستخدم Firefox. %1$s</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text_1 as text (“Learn More”).
+  -->
+  <string name="nova_onboarding_marketing_body_7" tools:ignore="BrandUsage">يمكنك مساعدتنا في الوصول إلى المزيد من الأشخاص من خلال السماح لـMozilla بإبلاغ المنصة التي أتيت منها بأنك تستخدم Firefox. %1$s</string>
+  <!-- Marketing onboarding additional body text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_line_two" tools:ignore="BrandUsage">يفخر Firefox باستقلاليته وتفانيه في الدفاع عن الإنترنت المفتوح ضد احتكارات التقنية.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">كيفية استخدامنا للبيانات</string>
+  <!-- Marketing onboarding body link text. -->
+  <string name="nova_onboarding_marketing_body_link_text_1">اطّلع على المزيد</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">ساعد Firefox</string>
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage,UnusedResources">ساعد Firefox</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text">لا، شكرًا</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -772,41 +698,6 @@
   <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">اعطِ الصفحة الرئيسية لمستك الخاصة.</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
-  <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">تحديد مكان شريط الأدوات</string>
-  <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_description" tools:ignore="UnusedResources">اجعل البحث في متناول يدك.</string>
-  <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
-  <string name="onboarding_save_and_continue_button">حفظ ومتابعة</string>
-  <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_top_option">الأعلى</string>
-  <!-- Onboarding toolbar selection card label for 'bottom' option, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_bottom_option">الأسفل</string>
-  <!-- Onboarding toolbar selection card content description for the main image. -->
-  <string name="onboarding_customize_toolbar_main_image_content_description">صورة رأسية كبيرة لواجهة اختيار موضع شريط الأدوات، تظهر رسماً توضيحياً لشريط الأدوات.</string>
-  <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
-  <string name="onboarding_customize_toolbar_placement_bottom_content_description">صورة لشريط الأدوات السفلي</string>
-  <string name="onboarding_customize_toolbar_placement_top_content_description">صورة لشريط الأدوات العلوي</string>
-  <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
-  <string name="onboarding_customize_toolbar_a11y_action_label_select">تحديد</string>
-  <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">اختر مظهرًا</string>
-  <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_description" tools:ignore="UnusedResources">استمتع بوضوح تام أثناء التصفح.</string>
-  <!-- Onboarding label for 'Save and start browsing' button, used by Nimbus experiments. -->
-  <string name="onboarding_save_and_start_button">حفظ وبدأ التصفح</string>
-  <!-- Onboarding theme selection card label for 'dark' option, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_dark_option">داكن</string>
-  <!-- Onboarding theme selection card label for 'light' option, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_light_option">إضاءة</string>
-  <!-- Onboarding theme selection card label for 'System auto' option, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_system_option">النظام التلقائي</string>
-  <!-- Onboarding theme selection card content description for the main image. -->
-  <string name="onboarding_customize_theme_main_image_content_description">صورة رأسية كبيرة لواجهة اختيار النسق، تظهر رسمًا لفنان وأدوات البناء.</string>
-  <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
-  <string name="onboarding_customize_theme_content_description">صورة لسمة %1$s</string>
-  <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
-  <string name="onboarding_customize_theme_a11y_action_label_select">تحديد</string>
   <!--
     Widget Picker
 
@@ -951,7 +842,7 @@
   <!-- Preference for accessibility -->
   <string name="preferences_accessibility">الإتاحة</string>
   <!-- Preference to override the Mozilla account server -->
-  <string name="preferences_override_account_server">خادم حسابات Mozilla مخصص</string>
+  <string name="preferences_override_account_server" tools:ignore="BrandUsage">خادم حسابات Mozilla مخصص</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">خادوم مزامنة مخصص</string>
   <!-- Preference category for account information -->
@@ -979,7 +870,7 @@
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">مزامنة التبويبات والإشارات المرجعية وكلمات المرور والمزيد.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
-  <string name="preferences_account_default_name_2">حساب Mozilla</string>
+  <string name="preferences_account_default_name_2" tools:ignore="BrandUsage">حساب Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
   <string name="preferences_account_sync_error">أعِد الاتصال لمواصلة المزامنة</string>
   <!-- Preference for language -->
@@ -1027,7 +918,7 @@
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">احصل على اقتراحات من الويب تتعلق ببحثك</string>
   <!-- Preference title for switch preference to show search optimization cards -->
-  <string name="preferences_show_search_optimization_cards">احصل على اقتراحات من Mozilla أثناء الكتابة</string>
+  <string name="preferences_show_search_optimization_cards" tools:ignore="BrandUsage">احصل على اقتراحات من Mozilla أثناء الكتابة</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">مشاركة الروابط</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1139,6 +1030,8 @@
   <string name="customize_toggle_pocket_sponsored">قصص مموّلة</string>
   <!-- Title for the opening wallpaper settings screen -->
   <string name="customize_wallpapers">الخلفيات</string>
+  <!-- Label for the menu item that opens the wallpaper settings screen. -->
+  <string name="browser_menu_change_wallpaper">غيّر الخلفية</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">الاختصارات المموّلة</string>
   <!--
@@ -1353,7 +1246,7 @@
   <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">تساعدنا البيانات المتعلقة بجهازك وتكوينات الأجهزة وكيفية الاستخدام في تطوير ميزات Firefox ورفع كفاءة الأداء والاستقرار.</string>
   <!-- Preference switch for daily usage ping data collection -->
   <string name="preferences_daily_usage_ping_title">تنبيه الاستخدام اليومي</string>
-  <string name="preferences_daily_usage_ping_description">يساعد هذا Mozilla على تقدير عدد المستخدمين النشطين.</string>
+  <string name="preferences_daily_usage_ping_description" tools:ignore="BrandUsage">يساعد هذا Mozilla على تقدير عدد المستخدمين النشطين.</string>
   <string name="preferences_daily_usage_ping_learn_more">اعرف المزيد عن تنبيه الاستخدام اليومي</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">أُرسل التقرير</string>
@@ -1379,7 +1272,7 @@
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">الدراسات</string>
   <!-- Summary for studies preferences -->
-  <string name="preference_experiments_summary_2">تسمح لمؤسسة Mozilla بتثبيت الدراسات وتشغيلها</string>
+  <string name="preference_experiments_summary_2" tools:ignore="BrandUsage">تسمح لمؤسسة Mozilla بتثبيت الدراسات وتشغيلها</string>
   <!--
     Turn On Sync Preferences
 
@@ -1480,8 +1373,6 @@
   <string name="library_desktop_bookmarks_unfiled">العلامات الأخرى</string>
   <!-- Option in Library to open History page -->
   <string name="library_history">التأريخ</string>
-  <!-- Option in Library to open a new tab -->
-  <string name="library_new_tab">تبويب جديد</string>
   <!-- Settings Page Title -->
   <string name="settings_title">الإعدادات</string>
   <!-- Content description (not visible, for screen readers etc.): "Close button for library settings" -->
@@ -1649,6 +1540,8 @@
   <string name="tab_manager_search_bar_placeholder">ابحث في تبويباتك</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">التبويبات المُغلقة حديثًا</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">حدّد الكل</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">إعدادات الحساب</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1711,6 +1604,14 @@
   <string name="pwa_site_controls_title_private">‏%1$s (الوضع الخاص)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">فتح تبويب البحث</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">أنشئ مجموعة ألسنة</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">اسحب علامة تبويب واحدة فوق أخرى لتجميعها.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">حدد عدة علامات تبويب لإنشاء مجموعة.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">أهمِل عملية إعداد مجموعة علامات التبويب</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">جرّب استخدام مجموعات اللسان لتقليل التمرير وزيادة الإنجاز</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -1720,7 +1621,7 @@
 
     Title for the create tab group bottom sheet
   -->
-  <string name="create_tab_group_title">أنشئ مجموعة لسان</string>
+  <string name="create_tab_group_title">أنشئ مجموعة تبويب</string>
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">حرّر على المجموعة</string>
   <string name="create_tab_group_save_button">احفظ</string>
@@ -1740,7 +1641,7 @@
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">أضف إلى مجموعة لسان جديدة</string>
   <!-- Label for adding to a new tab group. -->
-  <string name="add_to_new_tab_group_title">مجموعة لسان جديدة</string>
+  <string name="add_to_new_tab_group_title">مجموعة تبويب جديدة</string>
   <plurals name="tab_group_tabs_count_subtitle">
     <!--
       Subtitle for the number of tabs in a tab group.
@@ -1793,7 +1694,7 @@
     <item quantity="other">مجموعة لسان %1$s مع %2$d لسان، لون %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
-  <string name="delete_tab_group_confirmation_dialog_title">حذف مجموعة اللسان؟</string>
+  <string name="delete_tab_group_confirmation_dialog_title">حذف مجموعة التبويب؟</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_body">يؤدي هذا إلى حذف المجموعة نهائيًا.</string>
   <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
@@ -2082,6 +1983,12 @@
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">يُرجى إدخال عنوان رابط سليم</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
+  <string name="webcompat_reporter_label_whats_broken_3">ما الذي لا يعمل؟</string>
+  <!-- Content description for the icon button that clears the selected broken site reason in the WebCompat Reporter. -->
+  <string name="webcompat_reporter_clear_reason_content_description">امحُ السبب المحدّد</string>
+  <!-- The error message of the description when the user selects "Something else" as the reason, but left the description empty or too short. -->
+  <string name="webcompat_reporter_description_error">يُرجى إدخال 10 أحرف على الأقل</string>
+  <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">ما الخلل؟</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">اختر سببًا</string>
@@ -2109,6 +2016,12 @@
   <string name="webcompat_reporter_preview_bottom_sheet_header">معاينة التقرير</string>
   <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_send">إرسال</string>
+  <!-- Title for the Edit URL confirmation dialog in the WebCompatReporter -->
+  <string name="webcompat_reporter_edit_url_dialog_title">حرّر URL الموقع</string>
+  <!-- Text shown on the save button for the Edit URL confirmation dialog in the WebCompatReporter. -->
+  <string name="webcompat_reporter_edit_url_dialog_save">احفظ</string>
+  <!-- Text shown on the dismiss button for the Edit URL confirmation dialog in the WebCompatReporter. -->
+  <string name="webcompat_reporter_edit_url_dialog_dismiss">أهمِل</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -2128,6 +2041,10 @@
   <!-- Broken site reason text for site asked to turn off ad blocker -->
   <string name="webcompat_reporter_reason_turn_off_adblocker">طلب الموقع إيقاف مانع الإعلانات</string>
   <!-- Broken site reason text for browser isn’t supported or blocked -->
+  <string name="webcompat_reporter_reason_notsupported_2">المتصفح غير مدعوم أو حُظِر</string>
+  <!-- Broken site reason text for the site being deceptive -->
+  <string name="webcompat_reporter_reason_site_is_deceptive">هذا الموقع مضلل</string>
+  <!-- Broken site reason text for browser isn’t supported or blocked -->
   <string name="webcompat_reporter_reason_notsupported">المتصفح غير مدعوم أو تم حظره</string>
   <!-- Broken site reason text for something else -->
   <string name="webcompat_reporter_reason_other">سبب آخر</string>
@@ -2138,7 +2055,7 @@
   -->
   <string name="tab_crash_title_2">نأسف. يتعذر على %1$s تحميل هذه الصفحة.</string>
   <!-- Send crash report checkbox text on the tab crash page -->
-  <string name="tab_crash_send_report">أرسِل تقرير الانهيار إلى Mozilla</string>
+  <string name="tab_crash_send_report" tools:ignore="BrandUsage">أرسِل تقرير الانهيار إلى Mozilla</string>
   <!-- Close tab button text on the tab crash page -->
   <string name="tab_crash_close">إغلاق التبويب</string>
   <!-- Restore tab button text on the tab crash page -->
@@ -2237,12 +2154,8 @@
   <string name="edit_bookmark_folder_fragment_title">تعديل المجلد</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">المسار</string>
-  <!-- Bookmark FOLDER editing field label -->
-  <string name="bookmark_folder_label">المجلد</string>
   <!-- Text indicating which folder a bookmark or folder will be saved in -->
   <string name="bookmark_save_in_label">احفظ في</string>
-  <!-- Bookmark NAME editing field label -->
-  <string name="bookmark_name_label">الاسم</string>
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">الاسم</string>
   <!-- Bookmark select folder screen title -->
@@ -2286,12 +2199,8 @@
   <string name="bookmark_empty_list_root_title">احتفظ بجميع علاماتك المفضلة معًا</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">الإشارات المرجعية في المجلد: %s</string>
-  <!-- Description for the bookmark list empty state when you're not signed into sync. -->
-  <string name="bookmark_empty_list_guest_description">احفظ المواقع أثناء التصفح. سجّل الدخول لمزامنة العلامات المرجعية من جميع أجهزتك.</string>
   <!-- Text for the button to navigate to sync authentication -->
   <string name="bookmark_empty_list_guest_cta">سجّل الدخول للمزامنة</string>
-  <!-- Description for the bookmark list empty state when you're signed into sync. -->
-  <string name="bookmark_empty_list_authenticated_description">احفظ المواقع أثناء التصفح. وسنقوم بمزامنة العلامات المرجعية من أجهزتك الأخرى.</string>
   <!-- Description for the bookmark list empty state when you're in an empty folder. -->
   <string name="bookmark_empty_list_folder_description">احفظ المواقع في العلامات المرجعية لإيجاد مفضلاتك بسهولة في أي وقت.</string>
   <!-- Description for the add new folder button when selecting a folder. -->
@@ -2406,8 +2315,6 @@
   <string name="collections_header">التجميعات</string>
   <!-- Content description (not visible, for screen readers etc.): Opens the collection menu when pressed -->
   <string name="collection_menu_button_content_description">قائمة التجميعات</string>
-  <!-- Label to describe what collections are to a new user without any collections -->
-  <string name="no_collections_description2">اجمع ما يهمّك.\nضَع عمليات البحث والمواقع والتبويبات المتشابهة مع بعضها لتصل إليها لاحقًا بسهولة.</string>
   <!-- Title for the "select tabs" step of the collection creator -->
   <string name="create_collection_select_tabs">اختيار التبويبات</string>
   <!-- Title for the "select collection" step of the collection creator -->
@@ -2557,6 +2464,8 @@
   <string name="preferences_take_survey">شارك في الاستطلاع</string>
   <!-- Preference for not taking the short survey. -->
   <string name="preferences_not_take_survey">لا، شكرًا</string>
+  <!-- Error message shown in a Toast when the system fails to trigger the device uninstallation prompt. -->
+  <string name="uninstall_survey_error_failed">فشل فتح نافذة إلغاء تثبيت النظام، يُرجى استخدام إجراء إلغاء تثبيت النظام مباشرةً.</string>
   <!--
     Snackbar
 
@@ -3108,6 +3017,8 @@
   <string name="saved_logins_sort_strategy_last_used">آخر استخدام</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">قائمة فرز كلمات المرور</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">استورِد من ملف</string>
   <!--
     Email Masks
 
@@ -3140,8 +3051,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">شبكة VPN المدمجة في %s</string>
-  <!-- Body text for the browser VPN promo card -->
-  <string name="ip_protection_promo_body">تصفح الإنترنت بحماية إضافية عن طريق إخفاء موقعك حتى على شبكات الواي فاي العامة.</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">تصفح الإنترنت بأمان إضافي عن طريق إخفاء موقعك، حتى على شبكات الواي فاي العامة. %s</string>
   <!-- Link text that opens additional information about the browser VPN -->
   <string name="ip_protection_learn_more">اطّلع على المزيد</string>
   <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
@@ -3173,6 +3084,8 @@
   <string name="ip_protection_menu_paused">أُلبِث</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">خطأ</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">جرّبه</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">افتح إعدادات VPN</string>
   <!--
@@ -3201,6 +3114,8 @@
   <string name="ip_protection_onboarding_body">%1$s من خلال إخفاء موقعك، حتى عند استخدام شبكات Wi-Fi العامة. ستحصل على %2$d ج.بايت مجانًا كل شهر.</string>
   <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
   <string name="ip_protection_onboarding_body_link">تصفح الإنترنت بحماية إضافية</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link_promo">اطّلع على المزيد</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">ليس الآن</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
@@ -3210,6 +3125,8 @@
     %1$d is the total monthly allowance in GB (for example "50").
   -->
   <string name="ip_protection_data_limit_reached_snackbar">استُخدم %1$d ج.بايت من بيانات VPN. سيُصفّر الوصول الشهر المقبل.</string>
+  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
+  <string name="ip_protection_data_limit_reached_snackbar_action">الإعدادات</string>
   <!--
     Autofill
 
@@ -3512,6 +3429,8 @@
   <string name="homepage_shortcuts_add_shortcut">أضِف اختصارًا</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
   <string name="homepage_shortcuts_add_website_title">أدخل عنوان URL للموقع الإلكتروني</string>
+  <!-- Title for the "Popular sites" section in the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_popular_sites">المواقع الشائعة</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">بلغت أقصى حدّ للاختصارات</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3598,8 +3517,6 @@
   <string name="default_browser_experiment_card_title">تغيير متصفحك الافتراضي</string>
   <!-- Default browser card text -->
   <string name="default_browser_experiment_card_text" tools:ignore="BrandUsage">اضبط روابط المواقع والبريد الإلكتروني والرسائل لتفتح تلقائيًا في Firefox.</string>
-  <!-- Content description for close button in collection placeholder. -->
-  <string name="remove_home_collection_placeholder_content_description">إزالة</string>
   <!-- Content description radio buttons with a link to more information -->
   <string name="radio_preference_info_content_description">انقر لتفاصيل أكثر</string>
   <!-- Content description for the action bar "up" button -->
@@ -3631,20 +3548,10 @@
     Action label for elements that can be collapsed if interacting with them. Talkback will append this to say "Double tap to collapse".
   -->
   <string name="a11y_action_label_collapse">طي</string>
-  <!-- Current state for elements that can be collapsed if interacting with them. Talkback will dictate this after a state change. -->
-  <string name="a11y_state_label_collapsed">مقلّص</string>
   <!-- Action label for elements that can be expanded if interacting with them. Talkback will append this to say "Double tap to expand". -->
   <string name="a11y_action_label_expand">توسيع</string>
-  <!-- Current state for elements that can be expanded if interacting with them. Talkback will dictate this after a state change. -->
-  <string name="a11y_state_label_expanded">موسّع</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">افتح الرابط للاطلاع على المزيد عن هذه المجموعة</string>
-  <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
-  <string name="a11y_heading">%s، عنوان</string>
-  <!-- Title for dialog displayed when trying to access links present in a text. -->
-  <string name="a11y_links_title">روابط</string>
-  <!-- Additional content description for text bodies that contain urls. -->
-  <string name="a11y_links_available">الروابط المتاحة</string>
   <!-- Translations feature -->
 
   <!--
@@ -4090,6 +3997,8 @@
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">ما مدى رضاك عن تجربة مزامنة البيانات في Firefox؟</string>
   <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">ساعدنا في تحسين Firefox. ما الذي يوصف تجربتك حتى الآن؟</string>
+  <!-- Uninstall Survey -->
+  <string name="uninstall_survey_button_label">أرسل ملاحظاتك وألغِ التثبيت</string>
   <!--
     Accessibility
 
@@ -4461,15 +4370,15 @@
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_south_america">أمريكا الجنوبية</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england" tools:ignore="UnusedResources">إنجلترا</string>
+  <string name="sports_widget_country_england">إنجلترا</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">اسكتلندا</string>
+  <string name="sports_widget_country_scotland">اسكتلندا</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove">أزِل</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">أغلق</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">خيارات إضافية</string>
+  <string name="sports_widget_more_options_content_description">خيارات إضافية</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
@@ -4484,4 +4393,57 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">تنويه الخصوصية</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">معرفة المزيد</string>
+  <!-- Google Lens prototype related strings -->
+  <string name="preferences_debug_settings_google_lens_integration">فعِّل تكامل Google Lens</string>
+  <!-- Lens image search button content description -->
+  <string name="lens_search_content_description">ابحث باستخدام الصور</string>
+  <!-- Content description for the gallery picker button in the Lens camera screen -->
+  <string name="content_description_gallery">اختر من المعرض لإرساله إلى Google Lens</string>
+  <!-- Content description for the shutter button in the Lens camera screen -->
+  <string name="content_description_take_photo">التقط صورة وأرسلها إلى Google Lens</string>
+  <!-- Image context menu entry that sends the long-pressed image to Google Lens -->
+  <string name="context_menu_open_image_with_google_lens">ابحث باستخدام Google Lens</string>
+  <!-- Toast shown when the user denies the camera permission requested by the Lens camera screen -->
+  <string name="lens_camera_permission_denied">رُفض التصريح</string>
+  <!-- Title for the Google Lens AI feature toggle -->
+  <string name="ai_controls_google_lens_title">Google Lens</string>
+  <!-- Description for the Google Lens AI feature toggle -->
+  <string name="ai_controls_google_lens_description">يرسل الصور إلى جوجل للبحث المرئي.</string>
+  <!-- Content description for the Google Lens half of the camera mode toggle -->
+  <string name="lens_camera_mode_lens">Google Lens</string>
+  <!-- Content description for the QR scanner half of the camera mode toggle -->
+  <string name="lens_camera_mode_qr">ماسح رمز QR</string>
+  <!-- Toast shown when the user picks an image from the gallery in QR mode but no QR code is found in it -->
+  <string name="lens_camera_qr_no_code_found">لم يُعثر على رمز QR في الصورة</string>
+  <!-- Banner title text on the Firefox Labs screen. -->
+  <string name="firefox_labs_banner_title_2">جرّب ميزاتنا التجريبية!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">إنها قيد التطوير والتطوِّر، مما قد يؤثر على طريقة عمل %s.</string>
+  <!-- The link text shown when a feedback URL for a Firefox Labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
+  <string name="firefox_labs_share_feedback">شاركنا رأيك</string>
+  <!-- Content description for the share feedback link on a Firefox Labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the Firefox Labs feature. -->
+  <string name="firefox_labs_share_feedback_content_description">شاركنا رأيك لـ %s.</string>
+  <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
+  <string name="firefox_labs_restore_default_button_text">استعد الإعدادات المبدئية</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
+  <string name="firefox_labs_feature_dialog_title">مطلوب إعادة التشغيل</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+  <string name="firefox_labs_dialog_restart_button">أعِد التشغيل</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+  <string name="firefox_labs_dialog_cancel_button">ألغِ</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+  <string name="firefox_labs_restore_defaults_dialog_title">مطلوب إعادة التشغيل</string>
+  <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_restore_defaults_dialog_message">لاستعادة الإعدادات المبدئية، أعد تشغيل %s.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_enable_dialog_message">لتفعيل هذه الميزة، أعد تشغيل %s.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_disable_dialog_message">لإيقاف تشغيل هذه الميزة، أعد تشغيل %s.</string>
+  <!-- Helper text shown beneath a Firefox Labs item when it is blocked from being turned on. -->
+  <string name="firefox_labs_feature_conflict">هذه الميزة غير متاحة للتجربة.</string>
+  <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+  <string name="firefox_labs_no_labs_available_description">لا توجد ميزات تجريبية متاحة للتجربة حاليًا</string>
 </resources>
