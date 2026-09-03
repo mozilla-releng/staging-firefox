@@ -1,0 +1,2 @@
+Code-review bot stack test: parent commit.
+Added to prove multi-patch stack application on the git backend.
