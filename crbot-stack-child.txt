@@ -1,0 +1,2 @@
+Code-review bot stack test: child commit.
+Depends on the parent commit file.
