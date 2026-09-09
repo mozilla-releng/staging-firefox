@@ -1,5 +1,5 @@
 {
-  "phabricator.uri" : "https://phabricator.services.mozilla.com/",
-  "repository.callsign": "FIREFOXAUTOLAND",
+  "phabricator.uri" : "https://phabricator-dev.allizom.org/",
+  "repository.callsign": "FFTESTDEV",
   "history.immutable": false
 }

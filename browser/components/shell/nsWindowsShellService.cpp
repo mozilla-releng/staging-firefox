@@ -472,43 +472,7 @@ class __declspec(novtable) IOpenWithLauncher : public IUnknown {
 NS_IMETHODIMP
 nsWindowsShellService::LaunchSetDefaultAppPicker(const nsAString& aTarget,
                                                  int32_t aFlags) {
-  static constexpr GUID IID_IOpenWithLauncher = {
-      0x6a283fe2,
-      0xecfa,
-      0x4599,
-      {0x91, 0xc4, 0xe8, 0x09, 0x57, 0x13, 0x7b, 0x26}};
-
-  nsresult rv;
-  nsCOMPtr<nsIWindowsRegKey> regKey =
-      do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  // Get the CLSID from the registry.
-  rv =
-      regKey->Open(nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE,
-                   u"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OpenWith"_ns,
-                   nsIWindowsRegKey::ACCESS_READ);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsAutoString value;
-  rv = regKey->ReadStringValue(u"OpenWithLauncher"_ns, value);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  CLSID CLSID_IOpenWithLauncher;
-  HRESULT hr = ::CLSIDFromString(value.get(), &CLSID_IOpenWithLauncher);
-  NS_ENSURE_HRESULT(hr, NS_ERROR_FAILURE);
-
-  RefPtr<IOpenWithLauncher> pOWL;
-  hr = CoCreateInstance(CLSID_IOpenWithLauncher, nullptr, CLSCTX_LOCAL_SERVER,
-                        IID_IOpenWithLauncher, getter_AddRefs(pOWL));
-  NS_ENSURE_HRESULT(hr, NS_ERROR_NOT_AVAILABLE);
-
-  // Make sure the dialog is foregrounded.
-  CoAllowSetForegroundWindow(pOWL, nullptr);
-
-  hr = pOWL->Launch(nullptr, PromiseFlatString(aTarget).get(), aFlags);
-
-  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+  return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
