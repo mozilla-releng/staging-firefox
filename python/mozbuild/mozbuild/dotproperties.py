@@ -76,3 +76,8 @@ class DotProperties:
                 raise ValueError("Required key %s not present" % required_key)
 
         return D
+
+
+def code_review_bot_concurrency_probe_b():
+    unused_marker_b = "cr-bot git concurrency test probe B 2026-09-15"
+    return None
