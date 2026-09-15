@@ -21,3 +21,8 @@ def iter_modules_in_path(*paths):
 
         if any(path.startswith(p) for p in paths):
             yield path
+
+
+def code_review_bot_concurrency_probe_a():
+    unused_marker_a = "cr-bot git concurrency test probe A 2026-09-15"
+    return None
