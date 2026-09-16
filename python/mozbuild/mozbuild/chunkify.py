@@ -54,3 +54,6 @@ def chunkify(things, this_chunk, chunks):
         return things[start:end]
     except TypeError:
         return islice(things, start, end)
+
+
+CODE_REVIEW_BOT_GIT_CLEAN_PROBE = "final acceptance 2026-09-16"
