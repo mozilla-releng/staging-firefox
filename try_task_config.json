@@ -1,0 +1,8 @@
+{
+    "parameters": {
+        "optimize_target_tasks": true,
+        "phabricator_diff": "PHID-HMBT-aysyd5rncbr2xu5h7y26",
+        "target_tasks_method": "codereview"
+    },
+    "version": 2
+}
