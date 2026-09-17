@@ -17,7 +17,7 @@ from mach.util import get_state_dir
 from mozbuild.base import MozbuildObject
 from mozpack.files import FileFinder
 from moztest.resolve import TestResolver
-from mozversioncontrol import get_repository_object
+from mozversioncontrol import MissingUpstreamRepo, get_repository_object
 
 from ..cli import BaseTryParser
 from ..push import generate_try_task_config, push_to_try
@@ -389,9 +389,13 @@ def run(
 ):
     metrics.mach_try.remote_data_fetching_duration.start()
     setup_globals()
-    download_coverage_mapping(vcs.base_ref)
+    try:
+        download_coverage_mapping(vcs.base_ref)
+        changed_sources = vcs.get_outgoing_files()
+    except MissingUpstreamRepo as e:
+        print(f"ERROR {e}")
+        return 1
 
-    changed_sources = vcs.get_outgoing_files()
     test_files, test_chunks = find_tests(changed_sources)
     if not test_files and not test_chunks:
         print("ERROR Could not find any tests or chunks to run.")

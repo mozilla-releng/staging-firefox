@@ -28,6 +28,7 @@ from packaging.version import Version
 
 from mozversioncontrol.errors import (
     CannotDeleteFromRootOfRepositoryException,
+    MissingUpstreamRepo,
     MissingVCSExtension,
 )
 from mozversioncontrol.repo.base import Repository
@@ -35,6 +36,8 @@ from mozversioncontrol.repo.base import Repository
 # The built-in fsmonitor Windows/macOS for git 2.37+ is better than using the watchman hook.
 # Linux users will still need watchman and to enable the hook.
 MINIMUM_GIT_VERSION = Version("2.37")
+
+NULL_REVISION = "0" * 40
 
 
 ADD_GIT_CINNABAR_PATH = """
@@ -71,6 +74,10 @@ class GitRepository(Repository):
     @property
     def head_rev(self):
         return self._run("rev-parse", "HEAD").strip()
+
+    @property
+    def is_shallow(self):
+        return self._run("rev-parse", "--is-shallow-repository").strip() == "true"
 
     def is_cinnabar_repo(self) -> bool:
         """Return `True` if the repo is a git-cinnabar clone."""
@@ -143,15 +150,33 @@ class GitRepository(Repository):
 
         return official_remotes if official_remotes else ["--remotes"]
 
+    def _automation_base_rev(self):
+        """The fork point of the push a CI checkout was made for, when this
+        repository is that checkout.
+
+        run-task exports the push's base as GECKO_BASE_REV and its head as
+        GECKO_HEAD_REV. Matching the head keeps the value from being applied
+        to another repository opened in the same task."""
+        base_rev = os.environ.get("GECKO_BASE_REV")
+        if not base_rev or base_rev == NULL_REVISION:
+            return None
+        if os.environ.get("GECKO_HEAD_REV") != self.head_rev:
+            return None
+        return base_rev
+
     @property
     def base_ref(self):
+        base_rev = self._automation_base_rev()
+        if base_rev:
+            return base_rev
+
         remote_args = self.get_mozilla_remote_args()
 
         refs = self._run(
             "rev-list", "HEAD", "--topo-order", "--boundary", "--not", *remote_args
         ).splitlines()
-        if refs:
-            return refs[-1][1:]  # boundary starts with a prefix `-`
+        if refs and refs[-1].startswith("-"):
+            return refs[-1][1:]
         return self.head_rev
 
     def base_ref_as_hg(self):
@@ -236,8 +261,40 @@ class GitRepository(Repository):
 
         return self._run(*cmd).splitlines()
 
+    def _outgoing_history_connected(self, upstream):
+        """Whether every commit between HEAD and `upstream` (or the remotes
+        when `upstream` is None) is present locally.
+
+        A shallow clone cuts history at graft roots. If any path from HEAD
+        hits one before reaching the upstream, `git log` treats it as the
+        first commit ever and lists every file in the repository."""
+        roots = self._run(
+            "rev-list", "--max-parents=0", "HEAD", "--not", upstream or "--remotes"
+        )
+        return not roots.strip()
+
     def get_outgoing_files(self, diff_filter="ADM", upstream=None):
         assert all(f.lower() in self._valid_diff_filter for f in diff_filter)
+
+        upstream = upstream or self._automation_base_rev()
+
+        # Without the history down to the upstream only the two trees can be
+        # compared, which needs the exact base as upstream.
+        if self.is_shallow and not self._outgoing_history_connected(upstream):
+            if not upstream:
+                raise MissingUpstreamRepo(
+                    "A shallow clone has no history to find outgoing commits in. "
+                    "Pass the base revision as the upstream."
+                )
+            files = self._run(
+                "diff",
+                "--name-only",
+                "--no-renames",
+                f"--diff-filter={diff_filter.upper()}",
+                upstream,
+                "HEAD",
+            ).splitlines()
+            return [f for f in files if f]
 
         not_condition = upstream if upstream else "--remotes"
 

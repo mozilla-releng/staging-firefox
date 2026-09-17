@@ -229,9 +229,11 @@ def _is_unmodified_mach_core(topsrcdir: Path):
     if repo is None:
         return
 
+    from mozversioncontrol import MissingUpstreamRepo
+
     try:
         files = set(repo.get_outgoing_files()) | set(repo.get_changed_files())
-    except (subprocess.CalledProcessError, OSError):
+    except (subprocess.CalledProcessError, OSError, MissingUpstreamRepo):
         return
 
     _is_unmodified_mach_core_result = not any([

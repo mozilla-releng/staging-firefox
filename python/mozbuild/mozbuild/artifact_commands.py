@@ -471,9 +471,11 @@ def artifact_toolchain(
                     command_context.topsrcdir
                 )
                 if not isinstance(repo, mozversioncontrol.SrcRepository):
-                    changed_files = set(repo.get_outgoing_files()) | set(
-                        repo.get_changed_files()
-                    )
+                    changed_files = set(repo.get_changed_files())
+                    try:
+                        changed_files |= set(repo.get_outgoing_files())
+                    except mozversioncontrol.MissingUpstreamRepo:
+                        pass
                     if changed_files:
                         command_context.log(
                             logging.ERROR,

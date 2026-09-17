@@ -14,6 +14,7 @@ from subprocess import CalledProcessError
 from mozpack.path import join as join_path
 from mozpack.path import match as mozpackmatch
 from mozversioncontrol import InvalidRepoPath, get_repository_object
+from mozversioncontrol.errors import MissingUpstreamRepo
 
 from gecko_taskgraph import GECKO
 from gecko_taskgraph.util.hg import get_json_pushchangedfiles
@@ -79,7 +80,7 @@ def _get_locally_changed_files(repo):
         vcs = get_repository_object(repo)
         s = set(vcs.get_outgoing_files("AM"))
         return s
-    except (InvalidRepoPath, CalledProcessError):
+    except (InvalidRepoPath, CalledProcessError, MissingUpstreamRepo):
         return set()
 
 

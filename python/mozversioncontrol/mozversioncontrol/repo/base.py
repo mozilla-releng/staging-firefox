@@ -226,9 +226,15 @@ class Repository(abc.ABC):
         """Return a list of changed files compared to upstream.
 
         ``diff_filter`` works the same as `get_changed_files`.
-        ``upstream`` is a remote ref to compare against. If unspecified,
-        this will be determined automatically. If there is no remote ref,
-        a MissingUpstreamRepo exception will be raised.
+        ``upstream`` is a remote ref or revision to compare against. If
+        unspecified, this will be determined automatically. If there is no
+        remote ref, a MissingUpstreamRepo exception will be raised.
+
+        On a shallow git clone that lacks the history down to ``upstream``,
+        the result is the tree difference, so ``upstream`` must be the exact
+        fork point. Changes made on an upstream branch after the fork are
+        included in the result. A CI checkout supplies its fork point through
+        ``GECKO_BASE_REV``, which is used when ``upstream`` is unspecified.
         """
 
     @abc.abstractmethod

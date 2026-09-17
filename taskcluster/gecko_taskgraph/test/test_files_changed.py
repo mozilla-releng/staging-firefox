@@ -4,9 +4,10 @@
 
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from mozunit import main
+from mozversioncontrol.errors import MissingUpstreamRepo
 
 from gecko_taskgraph import files_changed
 
@@ -59,6 +60,25 @@ class TestCheck(unittest.TestCase):
 
     def test_check_match(self):
         self.assertTrue(files_changed.check(PARAMS, ["devtools/**"]))
+
+
+def fake_vcs(monkeypatch, **outgoing):
+    vcs = MagicMock()
+    vcs.get_outgoing_files = MagicMock(**outgoing)
+    monkeypatch.setattr(files_changed, "get_repository_object", lambda repo: vcs)
+    return vcs
+
+
+def test_locally_changed_files(monkeypatch):
+    fake_vcs(monkeypatch, return_value=["a.py", "b.py"])
+
+    assert files_changed._get_locally_changed_files("/repo") == {"a.py", "b.py"}
+
+
+def test_locally_changed_files_without_history(monkeypatch):
+    fake_vcs(monkeypatch, side_effect=MissingUpstreamRepo("shallow"))
+
+    assert files_changed._get_locally_changed_files("/repo") == set()
 
 
 if __name__ == "__main__":

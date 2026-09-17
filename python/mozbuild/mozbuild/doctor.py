@@ -427,9 +427,16 @@ def artifact_build(
         )
 
     repo = mozversioncontrol.get_repository_object(topsrcdir)
+    try:
+        outgoing_files = repo.get_outgoing_files()
+    except mozversioncontrol.MissingUpstreamRepo as e:
+        return DoctorCheck(
+            name="artifact_build",
+            status=CheckStatus.SKIPPED,
+            display_text=[f"Cannot determine the files changed by local commits: {e}"],
+        )
     changed_files = [
-        Path(file)
-        for file in set(repo.get_outgoing_files()) | set(repo.get_changed_files())
+        Path(file) for file in set(outgoing_files) | set(repo.get_changed_files())
     ]
 
     compiled_language_files_changed = ""
