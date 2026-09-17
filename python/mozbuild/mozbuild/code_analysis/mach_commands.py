@@ -285,9 +285,14 @@ def static_analysis(command_context):
 )
 @CommandArgument(
     "--outgoing",
+    const=True,
     default=False,
-    action="store_true",
-    help="Run static analysis checks on outgoing files from mercurial repository",
+    nargs="?",
+    metavar="UPSTREAM",
+    help="Run static analysis checks on files touched by commits that are not "
+    "on the remote repository. Without an argument, uses the repository's "
+    "default outgoing set. A git revision or remote branch, or an hg remote "
+    "repository, can also be given.",
 )
 def check(
     command_context,
@@ -331,7 +336,10 @@ def check(
     if outgoing:
         # Use outgoing files instead of source files
         repo = get_repository_object(command_context.topsrcdir)
-        files = repo.get_outgoing_files()
+        # `--outgoing` alone is True, `--outgoing REV` is the revision to
+        # compare against.
+        upstream = outgoing if isinstance(outgoing, str) else None
+        files = repo.get_outgoing_files(upstream=upstream)
     else:
         # Or resolve pattern
         files = itertools.chain(*[

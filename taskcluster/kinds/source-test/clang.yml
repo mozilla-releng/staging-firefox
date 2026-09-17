@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    run-on-repo-type: [hg]
+    run-on-repo-type: [hg, git]
     run-on-projects: ["trunk"]
     platform: linux64/debug
     worker-type: t-linux-docker-amd
@@ -40,9 +40,11 @@ tidy:
         symbol: cpp(clang-tidy)
     run:
         cwd: '{checkout}'
+        # GECKO_BASE_REV is only set on git checkouts (fetch-base-rev). hg
+        # tasks get a bare --outgoing and select draft commits.
         command: >-
             source taskcluster/scripts/misc/source-test-clang-setup.sh &&
-            ./mach --log-no-times static-analysis check --outgoing --output $HOME/clang-tidy.json --format json
+            ./mach --log-no-times static-analysis check --outgoing ${GECKO_BASE_REV:-} --output $HOME/clang-tidy.json --format json
     fetches:
         toolchain:
             - linux64-clang
@@ -74,9 +76,11 @@ external:
                         default: true
     run:
         cwd: '{checkout}'
+        # GECKO_BASE_REV is only set on git checkouts (fetch-base-rev). hg
+        # tasks get a bare --outgoing and select draft commits.
         command: >-
             source taskcluster/scripts/misc/source-test-clang-setup.sh &&
-            ./mach --log-no-times static-analysis check --checks="-*,mozilla-civet-*" --outgoing --output $HOME/clang-tidy.json --format json
+            ./mach --log-no-times static-analysis check --checks="-*,mozilla-civet-*" --outgoing ${GECKO_BASE_REV:-} --output $HOME/clang-tidy.json --format json
     fetches:
         toolchain:
             - linux64-clang
