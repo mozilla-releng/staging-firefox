@@ -11,9 +11,7 @@ task-defaults:
     worker:
         max-run-time: 7200
     run-on-projects: ['trunk']
-    run-on-repo-type: [hg]
     run:
-        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         secrets: true
