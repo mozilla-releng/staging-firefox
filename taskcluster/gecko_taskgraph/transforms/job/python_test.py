@@ -26,6 +26,9 @@ class PythonTestSchema(Schema, kw_only=True):
     # How to clone the upstream repo for the checkout, either "hg" or "git"
     # (default: "git")
     clone_with: Optional[Literal["hg", "git"]] = "git"
+    # Export the push's base revision as GECKO_BASE_REV so run-task fetches
+    # it before the checkout (git only).
+    fetch_base_rev: Optional[bool] = None
 
 
 defaults = {

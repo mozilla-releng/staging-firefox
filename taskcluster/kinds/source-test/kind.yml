@@ -52,6 +52,8 @@ task-defaults:
     use-uv: true
     attributes:
         retrigger: true
+    run:
+        fetch-base-rev: true
     task-context:
         from-object: {}
         substitution-fields: []

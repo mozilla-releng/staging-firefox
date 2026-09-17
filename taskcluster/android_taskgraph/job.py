@@ -36,6 +36,9 @@ class GradlewSchema(Schema, kw_only=True):
     secrets: Optional[list[SecretSchema]] = None
     dummy_secrets: Optional[list[DummySecretSchema]] = None
     clone_with: Optional[Literal["hg", "git"]] = "git"
+    # Export the push's base revision as GECKO_BASE_REV so run-task fetches
+    # it before the checkout (git only).
+    fetch_base_rev: Optional[bool] = None
 
 
 class MachGradleSchema(Schema, kw_only=True):
@@ -46,6 +49,9 @@ class MachGradleSchema(Schema, kw_only=True):
     workdir: Optional[str] = None
     use_caches: Optional[Union[bool, list[str]]] = None
     clone_with: Optional[Literal["hg", "git"]] = "git"
+    # Export the push's base revision as GECKO_BASE_REV so run-task fetches
+    # it before the checkout (git only).
+    fetch_base_rev: Optional[bool] = None
 
 
 class RunCommandsSchema(Schema, kw_only=True):
@@ -57,6 +63,9 @@ class RunCommandsSchema(Schema, kw_only=True):
     secrets: Optional[list[SecretSchema]] = None
     dummy_secrets: Optional[list[DummySecretSchema]] = None
     clone_with: Optional[Literal["hg", "git"]] = "git"
+    # Export the push's base revision as GECKO_BASE_REV so run-task fetches
+    # it before the checkout (git only).
+    fetch_base_rev: Optional[bool] = None
 
 
 @run_job_using("docker-worker", "run-commands", schema=RunCommandsSchema)
