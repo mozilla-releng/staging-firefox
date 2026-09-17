@@ -43,6 +43,8 @@ subsuite = "taskgraph"
 
 ["test_util_chunking.py"]
 
+["test_util_git.py"]
+
 ["test_util_partials.py"]
 
 ["test_util_runnable_jobs.py"]
