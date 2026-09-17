@@ -5,9 +5,7 @@
 task-defaults:
     tags:
         android-stuff: "true"
-    run-on-repo-type: [hg]
     run:
-        clone-with: hg
         mozconfig-variant: null
 
 android-geckoview-docs/opt:
