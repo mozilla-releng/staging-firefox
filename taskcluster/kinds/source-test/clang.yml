@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    run-on-repo-type: [hg]
+    run-on-repo-type: [hg, git]
     run-on-projects: ["trunk"]
     platform: linux64/debug
     worker-type: t-linux-docker-amd
@@ -43,7 +43,7 @@ tidy:
         cwd: '{checkout}'
         command: >-
             source taskcluster/scripts/misc/source-test-clang-setup.sh &&
-            ./mach --log-no-times static-analysis check --outgoing --output $HOME/clang-tidy.json --format json
+            ./mach --log-no-times static-analysis check --outgoing ${GECKO_BASE_REV:-} --output $HOME/clang-tidy.json --format json
     fetches:
         toolchain:
             - linux64-clang
@@ -78,7 +78,7 @@ external:
         cwd: '{checkout}'
         command: >-
             source taskcluster/scripts/misc/source-test-clang-setup.sh &&
-            ./mach --log-no-times static-analysis check --checks="-*,mozilla-civet-*" --outgoing --output $HOME/clang-tidy.json --format json
+            ./mach --log-no-times static-analysis check --checks="-*,mozilla-civet-*" --outgoing ${GECKO_BASE_REV:-} --output $HOME/clang-tidy.json --format json
     fetches:
         toolchain:
             - linux64-clang
