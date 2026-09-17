@@ -1,0 +1,57 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "build-android-aarch64-fenix/debug",
+                "build-android-aarch64-lite/opt",
+                "build-android-aarch64-lite/opt-upload-symbols",
+                "build-android-aarch64-non-unified/opt",
+                "build-android-aarch64-shippable-lite/opt",
+                "build-android-aarch64-shippable-lite/opt-upload-symbols",
+                "build-android-aarch64-shippable/opt",
+                "build-android-aarch64-shippable/opt-upload-symbols",
+                "build-android-aarch64/debug",
+                "build-android-aarch64/debug-upload-symbols",
+                "build-android-aarch64/opt",
+                "build-android-aarch64/opt-upload-symbols",
+                "build-android-arm-lite/opt",
+                "build-android-arm-lite/opt-upload-symbols",
+                "build-android-arm-shippable-lite/opt",
+                "build-android-arm-shippable-lite/opt-upload-symbols",
+                "build-android-arm-shippable/opt",
+                "build-android-arm-shippable/opt-upload-symbols",
+                "build-android-arm/debug",
+                "build-android-arm/debug-upload-symbols",
+                "build-android-arm/opt",
+                "build-android-arm/opt-upload-symbols",
+                "build-android-geckoview-docs/opt",
+                "build-android-x86_64-asan-fuzzing/opt",
+                "build-android-x86_64-fuzzing/debug",
+                "build-android-x86_64-lite/opt",
+                "build-android-x86_64-lite/opt-upload-symbols",
+                "build-android-x86_64-non-unified/opt",
+                "build-android-x86_64-shippable-lite/opt",
+                "build-android-x86_64-shippable-lite/opt-upload-symbols",
+                "build-android-x86_64-shippable/opt",
+                "build-android-x86_64-shippable/opt-upload-symbols",
+                "build-android-x86_64/debug",
+                "build-android-x86_64/debug-isolated-process",
+                "build-android-x86_64/debug-isolated-process-upload-symbols",
+                "build-android-x86_64/debug-upload-symbols",
+                "build-android-x86_64/opt",
+                "build-android-x86_64/opt-upload-symbols",
+                "build-ios-non-unified/plain",
+                "build-ios-sim/debug",
+                "build-ios-sim/opt",
+                "build-ios/debug",
+                "build-ios/opt"
+            ]
+        }
+    },
+    "version": 2
+}
