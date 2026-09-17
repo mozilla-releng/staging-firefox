@@ -5,9 +5,7 @@
 task-defaults:
     tags:
         android-stuff: "true"
-    run-on-repo-type: [hg]
     run:
-        clone-with: hg
 
 android-geckoview-docs/opt:
     description: "Android GeckoView docs"
