@@ -13,6 +13,7 @@ from taskgraph.transforms.run.common import CACHES, add_cache
 from taskgraph.util import json
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.taskcluster import get_artifact_prefix
+from taskgraph.util.vcs import Repository
 
 SECRET_SCOPE = "secrets:get:project/releng/{trust_domain}/{kind}/level-{level}/{secret}"
 
@@ -156,6 +157,15 @@ def support_vcs_checkout(config, job, taskdesc, repo_configs):
         })
         if repo_config.ssh_secret_name:
             taskdesc["scopes"].append(f"secrets:get:{repo_config.ssh_secret_name}")
+
+    base_rev = config.params.get("base_rev")
+    if (
+        config.params["repository_type"] == "git"
+        and job["run"].get("fetch-base-rev")
+        and base_rev
+        and base_rev not in (Repository.NULL_REVISION, config.params["head_rev"])
+    ):
+        env["GECKO_BASE_REV"] = base_rev
 
     gecko_path = env.setdefault("GECKO_PATH", geckodir)
 

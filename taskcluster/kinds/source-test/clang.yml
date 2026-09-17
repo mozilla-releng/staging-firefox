@@ -39,6 +39,7 @@ tidy:
     treeherder:
         symbol: cpp(clang-tidy)
     run:
+        fetch-base-rev: true
         cwd: '{checkout}'
         command: >-
             source taskcluster/scripts/misc/source-test-clang-setup.sh &&
@@ -73,6 +74,7 @@ external:
                         "1": false
                         default: true
     run:
+        fetch-base-rev: true
         cwd: '{checkout}'
         command: >-
             source taskcluster/scripts/misc/source-test-clang-setup.sh &&

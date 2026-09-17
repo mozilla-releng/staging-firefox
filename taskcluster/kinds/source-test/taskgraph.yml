@@ -34,6 +34,7 @@ diff:
     run:
         clone-with: hg
         using: run-task
+        fetch-base-rev: true
         cwd: '{checkout}'
         command: >-
             mkdir -p /builds/worker/artifacts/diffs &&

@@ -43,6 +43,7 @@ class RunTaskSchema(Schema, kw_only=True):
     sparse_profile_prefix: TOptional[str] = None
     # Whether to use a shallow clone or not, default True (git only).
     shallow_clone: TOptional[bool] = None
+    fetch_base_rev: TOptional[bool] = None
     # How to clone the upstream repo for the checkout, either "hg" or "git"
     # (default: "git")
     clone_with: TOptional[Literal["hg", "git"]] = "git"

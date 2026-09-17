@@ -10,6 +10,7 @@ from gecko_taskgraph.test.conftest import FakeParameters, FakeTransformConfig
 from gecko_taskgraph.transforms.job.common import (
     _rewrite_repo_configs_for_git_mirror,
     clone_type,
+    support_vcs_checkout,
 )
 
 
@@ -117,6 +118,54 @@ def test_rewrite_repo_configs_for_git_mirror():
 
     # Other repos (e.g. comm-central) are left untouched.
     assert rewritten["comm"] == repo_configs["comm"]
+
+
+@pytest.mark.parametrize(
+    "repository_type,fetch_base_rev,base_rev,expected",
+    (
+        pytest.param("git", True, "abc123", "abc123", id="git-opted-in"),
+        pytest.param("git", False, "abc123", None, id="git-not-opted-in"),
+        pytest.param("git", True, None, None, id="git-without-base-rev"),
+        pytest.param("git", True, "deadbeef", None, id="git-base-rev-is-head-rev"),
+        pytest.param("git", True, "0" * 40, None, id="git-null-base-rev"),
+        pytest.param("hg", True, "abc123", None, id="hg-never-exports-base-rev"),
+    ),
+)
+def test_support_vcs_checkout_base_rev(
+    repository_type, fetch_base_rev, base_rev, expected
+):
+    config = make_config(
+        repository_type=repository_type, base_rev=base_rev, head_rev="deadbeef"
+    )
+    job = {
+        "worker": {"os": "linux", "implementation": "docker-worker"},
+        "run": {
+            "workdir": "/builds/worker",
+            "clone-with": repository_type,
+            "fetch-base-rev": fetch_base_rev,
+        },
+    }
+    taskdesc = {"worker": {}, "scopes": []}
+    repo_configs = {
+        "gecko": RepoConfig(
+            prefix="gecko",
+            name="Mozilla Firefox",
+            base_repository="https://example.com/firefox",
+            head_repository="https://example.com/firefox",
+            head_ref="refs/heads/main",
+            head_rev="deadbeef",
+            type=repository_type,
+        ),
+    }
+
+    support_vcs_checkout(config, job, taskdesc, repo_configs)
+
+    env = taskdesc["worker"]["env"]
+    assert env["GECKO_HEAD_REV"] == "deadbeef"
+    if expected is None:
+        assert "GECKO_BASE_REV" not in env
+    else:
+        assert env["GECKO_BASE_REV"] == expected
 
 
 if __name__ == "__main__":
