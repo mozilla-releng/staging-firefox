@@ -28,6 +28,7 @@ from packaging.version import Version
 
 from mozversioncontrol.errors import (
     CannotDeleteFromRootOfRepositoryException,
+    MissingUpstreamRepo,
     MissingVCSExtension,
 )
 from mozversioncontrol.repo.base import Repository
@@ -71,6 +72,10 @@ class GitRepository(Repository):
     @property
     def head_rev(self):
         return self._run("rev-parse", "HEAD").strip()
+
+    @property
+    def is_shallow(self):
+        return self._run("rev-parse", "--is-shallow-repository").strip() == "true"
 
     def is_cinnabar_repo(self) -> bool:
         """Return `True` if the repo is a git-cinnabar clone."""
@@ -150,8 +155,8 @@ class GitRepository(Repository):
         refs = self._run(
             "rev-list", "HEAD", "--topo-order", "--boundary", "--not", *remote_args
         ).splitlines()
-        if refs:
-            return refs[-1][1:]  # boundary starts with a prefix `-`
+        if refs and refs[-1].startswith("-"):
+            return refs[-1][1:]
         return self.head_rev
 
     def base_ref_as_hg(self):
@@ -236,8 +241,36 @@ class GitRepository(Repository):
 
         return self._run(*cmd).splitlines()
 
+    def _outgoing_history_connected(self, upstream):
+        """Whether the history between HEAD and `upstream` (or the remotes when
+        `upstream` is None) is present, so that `git log` can walk it."""
+        if upstream:
+            return bool(
+                self._run("merge-base", upstream, "HEAD", return_codes=[1]).strip()
+            )
+        refs = self._run(
+            "rev-list", "HEAD", "--topo-order", "--boundary", "--not", "--remotes"
+        ).splitlines()
+        return not refs or refs[-1].startswith("-")
+
     def get_outgoing_files(self, diff_filter="ADM", upstream=None):
         assert all(f.lower() in self._valid_diff_filter for f in diff_filter)
+
+        if self.is_shallow and not self._outgoing_history_connected(upstream):
+            if not upstream:
+                raise MissingUpstreamRepo(
+                    "A shallow clone has no history to find outgoing commits in. "
+                    "Pass the base revision as the upstream."
+                )
+            files = self._run(
+                "diff",
+                "--name-only",
+                "--no-renames",
+                f"--diff-filter={diff_filter.upper()}",
+                upstream,
+                "HEAD",
+            ).splitlines()
+            return [f for f in files if f]
 
         not_condition = upstream if upstream else "--remotes"
 
