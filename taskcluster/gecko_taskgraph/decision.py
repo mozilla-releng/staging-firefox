@@ -32,6 +32,7 @@ from .files_changed import get_changed_files
 from .parameters import get_app_version, get_version
 from .util.backstop import ANDROID_PERFTEST_BACKSTOP_INDEX, BACKSTOP_INDEX, is_backstop
 from .util.bugbug import push_schedules
+from .util.git import derive_base_rev
 from .util.hg import get_hg_revision_branch, get_hg_revision_info
 from .util.partials import populate_release_history
 from .util.taskcluster import insert_index
@@ -357,6 +358,21 @@ def get_decision_parameters(graph_config, options):
 
     elif parameters["repository_type"] == "git":
         parameters["hg_branch"] = None
+        if parameters["tasks_for"] == "github-push":
+            # GitHub's event.before is not the base of a new or force pushed
+            # branch, see gecko_taskgraph.util.git.
+            base_rev = derive_base_rev(
+                repo,
+                parameters["head_repository"],
+                parameters["head_rev"],
+                parameters["head_ref"],
+                parameters["base_rev"],
+            )
+            if base_rev:
+                logger.info(
+                    f"Using {base_rev} as base_rev for {parameters['head_ref']}"
+                )
+                parameters["base_rev"] = base_rev
         parameters["files_changed"] = repo.get_changed_files(
             rev=parameters["head_rev"], base=parameters["base_rev"]
         )
