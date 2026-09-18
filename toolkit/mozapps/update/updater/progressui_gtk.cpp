@@ -119,3 +119,5 @@ void QuitProgressUI() { sQuit = TRUE; }
 void UpdateProgressUI(float progress) {
   sProgressVal = progress;  // 32-bit writes are atomic
 }
+
+// Bug 2072920 clang tidy probe
