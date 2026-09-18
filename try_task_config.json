@@ -1,0 +1,30 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "build-android-aarch64-shippable/opt",
+                "build-android-aarch64-shippable-lite/opt",
+                "generate-profile-android-aarch64-shippable/opt",
+                "toolchain-macosx64-aarch64-python-3.10",
+                "build-fat-aar-android-geckoview-fat-aar-shippable/opt",
+                "build-apk-fenix-nightly-simulation",
+                "signing-apk-fenix-nightly-simulation",
+                "perftest-android-hw-a55-aarch64-perfstats-fenix",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-cold-main-first-frame",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-cold-view-nav-start",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-homeview-startup",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-newssite-applink-startup",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-shopify-applink-startup",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-tab-restore-startup",
+                "perftest-android-hw-a55-background-resource-fenix",
+                "perftest-android-hw-a55-foreground-resource-fenix"
+            ]
+        }
+    },
+    "version": 2
+}
