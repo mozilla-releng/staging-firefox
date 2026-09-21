@@ -1,0 +1,32 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "build-apk-fenix-debug",
+                "build-apk-focus-debug",
+                "build-bundle-fenix-debug",
+                "build-bundle-focus-debug",
+                "build-components-beta-support-base",
+                "build-components-browser-engine-gecko",
+                "build-components-nightly-support-base",
+                "build-components-release-support-base",
+                "build-components-samples-glean",
+                "build-components-samples-glean-library",
+                "build-components-support-base",
+                "build-components-tooling-lint",
+                "build-extensions-browser",
+                "build-fat-aar-android-geckoview-fat-aar-shippable-lite/opt",
+                "build-fat-aar-android-geckoview-fat-aar-shippable/opt",
+                "build-fat-aar-android-geckoview-fat-aar/opt",
+                "build-samples-browser-gecko",
+                "build-samples-browser-system"
+            ]
+        }
+    },
+    "version": 2
+}
