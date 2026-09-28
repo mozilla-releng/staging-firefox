@@ -1,0 +1,29 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "snap-upstream-build-amd64-beta/opt",
+                "snap-upstream-build-amd64-local/debug",
+                "snap-upstream-build-amd64-stable/opt",
+                "snap-upstream-test-basic-2204-amd64-beta/debug",
+                "snap-upstream-test-basic-2204-amd64-beta/opt",
+                "snap-upstream-test-basic-2204-amd64-local/debug",
+                "snap-upstream-test-basic-2204-amd64-local/opt",
+                "snap-upstream-test-basic-2204-amd64-stable/debug",
+                "snap-upstream-test-basic-2204-amd64-stable/opt",
+                "snap-upstream-test-basic-2404-amd64-beta/debug",
+                "snap-upstream-test-basic-2404-amd64-beta/opt",
+                "snap-upstream-test-basic-2404-amd64-local/debug",
+                "snap-upstream-test-basic-2404-amd64-local/opt",
+                "snap-upstream-test-basic-2404-amd64-stable/debug",
+                "snap-upstream-test-basic-2404-amd64-stable/opt"
+            ]
+        }
+    },
+    "version": 2
+}
