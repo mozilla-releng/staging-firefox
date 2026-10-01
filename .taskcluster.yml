@@ -381,7 +381,7 @@ tasks:
                                 headRev: '${push.revision}'
                       - $switch:
                             'tasks_for == "github-push"':
-                                ownerEmail: '${event.pusher.email}'
+                                ownerEmail: '${event.head_commit.committer.email}'
                                 baseRepoUrl: '${event.repository.html_url}'
                                 repoUrl: '${event.repository.html_url}'
                                 project: '${event.repository.name}'
