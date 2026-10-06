@@ -1,0 +1,25 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "condprof-linux64-firefox-full",
+                "condprof-linux64-firefox-settled",
+                "condprof-macosx64-firefox-full",
+                "condprof-macosx64-firefox-settled",
+                "condprof-windows2012-64-firefox-full",
+                "condprof-windows2012-64-firefox-settled",
+                "test-linux2404-64-shippable/opt-browsertime-benchmark-firefox-motionmark-1-3",
+                "test-linux2404-64-shippable/opt-browsertime-benchmark-firefox-speedometer3",
+                "test-linux2404-64-shippable/opt-browsertime-benchmark-firefox-speedometer3-native-profiling",
+                "test-linux2404-64-shippable/opt-browsertime-benchmark-firefox-speedometer3-native-profiling-no-nv",
+                "test-linux2404-64-shippable/opt-browsertime-benchmark-firefox-speedometer3-no-nv"
+            ]
+        }
+    },
+    "version": 2
+}
