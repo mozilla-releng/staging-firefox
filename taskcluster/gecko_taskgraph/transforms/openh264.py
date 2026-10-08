@@ -4,9 +4,9 @@
 
 import taskgraph
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.hash import hash_paths
 
 from gecko_taskgraph import GECKO
-from gecko_taskgraph.util.hash import hash_paths
 
 CACHE_TYPE = "openh264.v1"
 

@@ -81,7 +81,7 @@ def fill_template(config, tasks):
                     dummy_tasks[index] = {
                         "label": "index-search-" + index,
                         "description": index,
-                        "worker-type": "invalid/always-optimized",
+                        "worker-type": "always-optimized",
                         "run": {
                             "using": "always-optimized",
                         },
