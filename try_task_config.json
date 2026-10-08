@@ -1,0 +1,47 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "condprof-linux64-firefox-full",
+                "condprof-linux64-firefox-settled",
+                "condprof-macosx64-firefox-full",
+                "condprof-macosx64-firefox-settled",
+                "condprof-windows2012-64-firefox-full",
+                "condprof-windows2012-64-firefox-settled",
+                "source-test-python-condprof-linux2404-64/opt",
+                "source-test-python-firefox-ci",
+                "source-test-python-mach-linux2404-64/opt",
+                "source-test-python-mach-windows11-64/opt",
+                "source-test-python-manifest",
+                "source-test-python-mozbase-macosx1470-64/opt",
+                "source-test-python-mozbuild-3.10-linux2404-64/opt",
+                "source-test-python-mozbuild-3.11-macosx1470-64/opt",
+                "source-test-python-mozbuild-3.11-windows11-64/opt",
+                "source-test-python-mozharness",
+                "source-test-python-mozlint-linux2404-64/opt",
+                "source-test-python-mozperftest-linux2404-64/opt",
+                "source-test-python-mozrelease",
+                "source-test-wpt-unittest-default",
+                "webrender-android-emulator-debug",
+                "webrender-android-emulator-release",
+                "webrender-android-hw-a55-debug",
+                "webrender-android-hw-a55-opt",
+                "webrender-cargotest-macos-build",
+                "webrender-linux64-debug",
+                "webrender-linux64-release",
+                "webrender-macos-debug",
+                "webrender-macos-release",
+                "webrender-windows",
+                "webrender-wrench-android-debug",
+                "webrender-wrench-android-release",
+                "webrender-wrench-macos-build"
+            ]
+        }
+    },
+    "version": 2
+}
