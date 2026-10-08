@@ -9,12 +9,14 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 kind-dependencies:
+    - build
     - source-test
 
 tasks:
     issues:
         label: code-review-issues
         description: List all issues found in static analysis and linting tasks
+        upstream-attribute: code-review
         worker-type: succeed
 
         # Only run by using the code-review target_tasks_method
@@ -28,3 +30,21 @@ tasks:
         # Publish on pulse
         routes:
             - project.relman.codereview.v1.try_ending
+
+    build-test-issues:
+        label: code-review-build-test-issues
+        description: List all issues found in build and test tasks
+        upstream-attribute: code-review-build-test
+        worker-type: succeed
+
+        # Only run by using the code-review-build-test target_tasks_method
+        run-on-projects: []
+
+        # This option permits to run the task
+        # regardless of the soft-dependencies tasks exit status
+        # as we are interested in the task failures
+        requires: all-resolved
+
+        # Publish on pulse
+        routes:
+            - project.relman.codereview-build-test.v1.try_ending

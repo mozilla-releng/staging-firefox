@@ -1480,7 +1480,7 @@ def target_tasks_codereview(full_task_graph, parameters, graph_config):
 
     def filter(task):
         # Ending tasks
-        if task.kind in ["code-review"]:
+        if task.label == "code-review-issues":
             return True
 
         # Analyzer tasks
@@ -1497,6 +1497,10 @@ def target_tasks_codereview_build_test(full_task_graph, parameters, graph_config
     """Select all build and test tasks that should run as part of code review pushes."""
 
     def filter(task):
+        # Ending tasks
+        if task.label == "code-review-build-test-issues":
+            return True
+
         if task.attributes.get("code-review-build-test") is True:
             return True
 
@@ -2031,7 +2035,11 @@ def target_firefox_pull_requests(full_task_graph, parameters, graph_config):
     labels = []
     for label, task in full_task_graph.tasks.items():
         # Always add the code review analysis & ending tasks
-        if task.attributes.get("code-review") or task.kind == "code-review":
+        if (
+            task.attributes.get("code-review")
+            or task.attributes.get("code-review-build-test")
+            or task.kind == "code-review"
+        ):
             labels.append(label)
 
         elif not standard_filter(task, parameters):
