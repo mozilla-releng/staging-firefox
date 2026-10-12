@@ -30,9 +30,10 @@ android-gradle-build:
             # "no built artifacts found" (bug 2062847).
             MOZ_ARTIFACT_ALLOW_NON_SHIPPABLE: '1'
         max-run-time: 7200
-    run-on-repo-type: [hg]
     run:
-        clone-with: hg
+        # The artifact build looks for the builds of earlier pushes among the
+        # ancestors of the checkout, which a shallow clone does not have.
+        shallow-clone: false
         using: run-task
         command: >
             ln -s $MOZ_FETCHES_DIR/android-gradle-dependencies $GECKO_PATH &&
