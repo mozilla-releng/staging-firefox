@@ -1,0 +1,20 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "android-l10n-import",
+                "cron-bouncer-check-firefox",
+                "l10n-bump-l10n-bumper",
+                "maybe-release-firefox",
+                "release-notify-testrail-create-milestone-fenix",
+                "trigger-comm-central-tb-rust"
+            ]
+        }
+    },
+    "version": 2
+}
