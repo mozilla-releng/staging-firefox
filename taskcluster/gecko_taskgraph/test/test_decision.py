@@ -105,6 +105,7 @@ def _hg_metadata(desc):
                 "try_mode": None,
                 "try_task_config": {},
                 "head_git_rev": "bcde",
+                "base_git_rev": "bcde",
             },
             id="simple_options",
         ),

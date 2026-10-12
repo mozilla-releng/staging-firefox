@@ -31,6 +31,31 @@ from taskgraph.main import (
 from gecko_taskgraph import GECKO
 from gecko_taskgraph.files_changed import get_locally_changed_files
 
+NULL_REVISION = "0" * 40
+
+
+def fetch_missing_git_base(repo, base_ref):
+    """Fetch `base_ref` into a git checkout that does not have it.
+
+    CI clones are shallow, so the base of a push is normally absent; one
+    depth-1 fetch of that commit is enough to generate the graph at it."""
+    if repo.name != "git":
+        return
+    exists = subprocess.run(
+        ["git", "cat-file", "-e", f"{base_ref}^{{commit}}"],
+        cwd=repo.path,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if exists.returncode == 0:
+        return
+    remote = os.environ.get("GECKO_BASE_REPOSITORY", "origin")
+    print(f"Fetching base revision {base_ref} from {remote}", file=sys.stderr)
+    subprocess.run(
+        ["git", "fetch", "--depth=1", remote, base_ref], cwd=repo.path, check=False
+    )
+
 
 def format_taskgraph_yaml(taskgraph):
     class TGDumper(yaml.SafeDumper):
@@ -375,9 +400,27 @@ def show_taskgraph(options):
         else:
             base_ref = options["diff"]
 
-        base_ref_file = base_ref.replace("/", "_")
+        if base_ref == NULL_REVISION:
+            print(
+                "warning: there is no base revision (a push that creates a "
+                "branch); skipping the taskgraph diff",
+                file=sys.stderr,
+            )
+            return 0
+
+        fetch_missing_git_base(repo, base_ref)
         try:
             repo.update(base_ref)
+        except subprocess.CalledProcessError:
+            print(
+                f"warning: base revision {base_ref} is not available in this "
+                "checkout; skipping the taskgraph diff",
+                file=sys.stderr,
+            )
+            return 0
+
+        base_ref_file = base_ref.replace("/", "_")
+        try:
             base_ref = repo.head_rev[:12]
             options["output_file"] = os.path.join(
                 diffdir, f"{options['graph_attr']}_{base_ref_file}"

@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 ARTIFACTS_DIR = os.environ.get("MOZ_UPLOAD_DIR", "artifacts")
 GIT_BACKING_REPO = "https://github.com/mozilla-releng/git-backing"
+NULL_REVISION = "0" * 40
 
 # Age, in days, of the oldest changesets assumed to already be present in a
 # downstream task's store (i.e. served by the CDN clone bundle). The source
@@ -522,6 +523,8 @@ def get_decision_parameters(graph_config, options):
     if parameters["repository_type"] == "git" and "files_changed" not in parameters:
         parameters["files_changed"] = get_git_files_changed(repo, parameters)
 
+    parameters["base_git_rev"] = get_base_git_rev(parameters)
+
     result = Parameters(**parameters)
     result.check()
     return result
@@ -564,6 +567,24 @@ def get_git_files_changed(repo, parameters):
             base_rev = repo.NULL_REVISION
 
     return repo.get_changed_files(rev=parameters["head_rev"], base=base_rev)
+
+
+def get_base_git_rev(parameters):
+    """Return the git commit matching `base_rev`, or None when there is none.
+
+    On a git-backed push `base_rev` already is a git commit, except for the
+    null revision Github reports when a push creates a branch. On a Mercurial
+    push the base changeset carries a `git_commit` extra once the git mirror
+    knows it; older changesets and unknown revisions have no mapping."""
+    base_rev = parameters.get("base_rev")
+    if not base_rev or base_rev == NULL_REVISION:
+        return None
+    if parameters["repository_type"] == "git":
+        return base_rev
+    try:
+        return get_hg_revision_metadata(GECKO, base_rev)["extras"].get("git_commit")
+    except (subprocess.CalledProcessError, KeyError, ValueError):
+        return None
 
 
 def set_try_config(parameters, task_config_file):
