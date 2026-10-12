@@ -60,6 +60,12 @@ topic.
 : Optionally, the git commit corresponding to the head_rev when it's in a Mercurial
   repository.
 
+`base_git_rev`
+
+: Optionally, the git commit corresponding to `base_rev`. It is `base_rev` itself
+  on a git push, the `git_commit` of the base changeset on a Mercurial push, and
+  null when there is no base (a push creating a branch) or no known mapping.
+
 `head_git_ref`
 
 : Optionally, the git ref associated with `head_git_rev`.

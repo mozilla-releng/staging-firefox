@@ -522,6 +522,8 @@ def get_decision_parameters(graph_config, options):
     if parameters["repository_type"] == "git" and "files_changed" not in parameters:
         parameters["files_changed"] = get_git_files_changed(repo, parameters)
 
+    parameters["base_git_rev"] = get_base_git_rev(repo, parameters)
+
     result = Parameters(**parameters)
     result.check()
     return result
@@ -564,6 +566,25 @@ def get_git_files_changed(repo, parameters):
             base_rev = repo.NULL_REVISION
 
     return repo.get_changed_files(rev=parameters["head_rev"], base=base_rev)
+
+
+def get_base_git_rev(repo, parameters):
+    """Return the git commit matching `base_rev`, or None when there is none.
+
+    On a git-backed push `base_rev` already is a git commit, except for the
+    null revision Github reports when a push creates a branch. On a Mercurial
+    push the base changeset's `git_commit` extra names the matching git
+    commit; changesets that predate the git migration and unknown revisions
+    have no mapping."""
+    base_rev = parameters.get("base_rev")
+    if not base_rev or base_rev == repo.NULL_REVISION:
+        return None
+    if parameters["repository_type"] == "git":
+        return base_rev
+    try:
+        return get_hg_revision_metadata(GECKO, base_rev)["extras"].get("git_commit")
+    except (subprocess.CalledProcessError, KeyError, ValueError):
+        return None
 
 
 def set_try_config(parameters, task_config_file):
