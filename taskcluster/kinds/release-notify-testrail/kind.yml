@@ -13,7 +13,6 @@ kind-dependencies:
     - ui-test-apk
 
 task-defaults:
-    run-on-repo-type: [hg]
     description: Sends Slack message to release testers that Testrail Milestone was created.
     task-context:
         from-parameters:
@@ -30,7 +29,6 @@ task-defaults:
         docker-image: {in-tree: android-ui-tests}
         max-run-time: 1800
     run:
-        clone-with: hg
         use-caches: false
         using: run-commands
         secrets:

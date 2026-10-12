@@ -14,7 +14,6 @@ kind-dependencies:
     - repackage-msi
 
 task-defaults:
-    run-on-repo-type: [hg]
 
 only-for-build-platforms:
     - win32-shippable/opt

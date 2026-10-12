@@ -10,7 +10,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     run-on-projects: ['mozilla-central-only']
     task-context:
         from-parameters:
@@ -27,7 +26,6 @@ task-defaults:
         max-run-time: 600
         taskcluster-proxy: true
     run:
-        clone-with: hg
         using: run-task
         checkout: false
 

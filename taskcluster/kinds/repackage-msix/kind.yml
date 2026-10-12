@@ -17,7 +17,6 @@ kind-dependencies:
     - toolchain
 
 task-defaults:
-    run-on-repo-type: [hg]
 
 only-for-build-platforms:
     - win32/opt

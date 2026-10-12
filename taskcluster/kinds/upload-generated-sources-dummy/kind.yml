@@ -11,7 +11,6 @@ transforms:
     - gecko_taskgraph.transforms.task
 
 task-defaults:
-    run-on-repo-type: [hg]
 
 only-for-build-platforms:
     macosx64-shippable/opt

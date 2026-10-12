@@ -14,7 +14,6 @@ kind-dependencies:
     - repackage-rpm
 
 task-defaults:
-    run-on-repo-type: [hg]
 
 only-for-build-platforms:
     - linux64-shippable/opt

@@ -15,7 +15,6 @@ transforms:
     - gecko_taskgraph.transforms.task
 
 task-defaults:
-    run-on-repo-type: [hg]
 
 tasks:
     openh264-symbol-upload:

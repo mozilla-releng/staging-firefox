@@ -10,7 +10,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
 
 tasks:
     mach-release:
@@ -26,7 +25,6 @@ tasks:
         scopes:
             - "secrets:get:project/engwf/gecko/{level}/tokens"
         run:
-            clone-with: hg
             using: run-task
             checkout: false
             command: /bin/bash /usr/bin/submit_sentry_release.sh

@@ -15,7 +15,6 @@ kind-dependencies:
     - openh264-signing
 
 task-defaults:
-    run-on-repo-type: [hg]
 
 only-for-build-platforms:
     - macosx64/opt

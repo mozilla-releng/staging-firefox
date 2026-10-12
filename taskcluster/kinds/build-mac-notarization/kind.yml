@@ -18,7 +18,6 @@ only-for-attributes:
     - shippable
 
 task-defaults:
-    run-on-repo-type: [hg]
 
 tasks:
     build-mac-notarization:
