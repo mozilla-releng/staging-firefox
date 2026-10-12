@@ -1,0 +1,20 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "test-android-em-14-x86_64/opt-geckoview-web-platform-tests-nofis-1",
+                "test-android-em-14-x86_64/opt-geckoview-xpcshell-1",
+                "test-linux2404-64/opt-mochitest-browser-chrome-1",
+                "test-linux2404-64/opt-xpcshell-1",
+                "test-macosx1500-aarch64/opt-xpcshell-1",
+                "test-windows11-64-25h2/opt-xpcshell-1"
+            ]
+        }
+    },
+    "version": 2
+}
