@@ -32,6 +32,31 @@ from gecko_taskgraph import GECKO
 from gecko_taskgraph.files_changed import get_locally_changed_files
 
 
+def fetch_missing_git_base(repo, base_ref):
+    """Fetch `base_ref` into a shallow CI git checkout that does not have it.
+
+    Only done in automation (MOZ_AUTOMATION), where clones are shallow and
+    the base of a push is normally absent; one depth-1 fetch of that commit
+    is enough to generate the graph at it. A developer's checkout is left
+    alone."""
+    if repo.name != "git" or not os.environ.get("MOZ_AUTOMATION"):
+        return
+    exists = subprocess.run(
+        ["git", "cat-file", "-e", f"{base_ref}^{{commit}}"],
+        cwd=repo.path,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if exists.returncode == 0:
+        return
+    remote = os.environ.get("GECKO_BASE_REPOSITORY", "origin")
+    print(f"Fetching base revision {base_ref} from {remote}", file=sys.stderr)
+    subprocess.run(
+        ["git", "fetch", "--depth=1", remote, base_ref], cwd=repo.path, check=False
+    )
+
+
 def format_taskgraph_yaml(taskgraph):
     class TGDumper(yaml.SafeDumper):
         def ignore_aliases(self, data):
@@ -275,6 +300,7 @@ def show_kinds(options):
 def show_taskgraph(options):
     from mozversioncontrol import get_repository_object as get_repository
     from taskgraph.parameters import Parameters, parameters_loader
+    from taskgraph.util.vcs import Repository
 
     if options.pop("verbose", False):
         logging.root.setLevel(logging.DEBUG)
@@ -375,9 +401,27 @@ def show_taskgraph(options):
         else:
             base_ref = options["diff"]
 
-        base_ref_file = base_ref.replace("/", "_")
+        if base_ref == Repository.NULL_REVISION:
+            print(
+                "warning: there is no base revision (a push that creates a "
+                "branch); skipping the taskgraph diff",
+                file=sys.stderr,
+            )
+            return 0
+
+        fetch_missing_git_base(repo, base_ref)
         try:
             repo.update(base_ref)
+        except subprocess.CalledProcessError:
+            print(
+                f"warning: base revision {base_ref} is not available in this "
+                "checkout; skipping the taskgraph diff",
+                file=sys.stderr,
+            )
+            return 0
+
+        base_ref_file = base_ref.replace("/", "_")
+        try:
             base_ref = repo.head_rev[:12]
             options["output_file"] = os.path.join(
                 diffdir, f"{options['graph_attr']}_{base_ref_file}"
