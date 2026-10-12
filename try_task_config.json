@@ -1,0 +1,17 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "cron-bouncer-check-firefox",
+                "maybe-release-firefox",
+                "trigger-comm-central-tb-rust"
+            ]
+        }
+    },
+    "version": 2
+}
