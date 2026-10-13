@@ -1,0 +1,18 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "android-startup-test-fenix-arm64-v8a-nightly-robo-opt",
+                "test-apk-fenix-debug",
+                "test-apk-focus-debug",
+                "test-components-android-feature-downloads"
+            ]
+        }
+    },
+    "version": 2
+}
