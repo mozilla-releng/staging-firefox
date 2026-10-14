@@ -1,0 +1,18 @@
+{
+    "parameters": {
+        "optimize_target_tasks": false,
+        "target_tasks_method": "try_tasks",
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "build-components-nightly-browser-domains",
+                "build-components-nightly-concept-base",
+                "signing-nightly-browser-domains",
+                "signing-nightly-concept-base"
+            ]
+        }
+    },
+    "version": 2
+}
