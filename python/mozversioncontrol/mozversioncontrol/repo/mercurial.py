@@ -56,6 +56,10 @@ class HgRepository(Repository):
     def head_rev(self):
         return self._run("log", "-r", ".", "-T", "{node}")
 
+    @property
+    def is_shallow(self):
+        return False
+
     def is_cinnabar_repo(self) -> bool:
         return False
 
