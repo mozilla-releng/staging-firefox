@@ -72,6 +72,10 @@ class GitRepository(Repository):
     def head_rev(self):
         return self._run("rev-parse", "HEAD").strip()
 
+    @property
+    def is_shallow(self):
+        return self._run("rev-parse", "--is-shallow-repository").strip() == "true"
+
     def is_cinnabar_repo(self) -> bool:
         """Return `True` if the repo is a git-cinnabar clone."""
 

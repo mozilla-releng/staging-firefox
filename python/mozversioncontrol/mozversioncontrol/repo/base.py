@@ -147,6 +147,11 @@ class Repository(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def is_shallow(self) -> bool:
+        """Whether this repo is a shallow clone."""
+
+    @property
+    @abc.abstractmethod
     def is_cinnabar_repo(self) -> bool:
         """True if the repo is a git cinnabar repo"""
 

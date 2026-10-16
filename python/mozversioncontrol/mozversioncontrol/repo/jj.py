@@ -122,6 +122,10 @@ class JujutsuRepository(Repository):
     def head_rev(self):
         return self._resolve_to_commit(self.HEAD_REVSET)
 
+    @property
+    def is_shallow(self):
+        return self._git.is_shallow
+
     def is_cinnabar_repo(self) -> bool:
         return self._git.is_cinnabar_repo()
 

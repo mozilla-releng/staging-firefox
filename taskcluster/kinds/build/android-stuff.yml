@@ -34,6 +34,7 @@ android-geckoview-docs/opt:
         variant: nightly-android-lints
         platform: android-arm
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
