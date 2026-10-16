@@ -105,6 +105,9 @@
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include <android/native_window.h>
+#  include <android/native_window_jni.h>
+
 #  include "ffvpx/hwcontext_mediacodec.h"
 #  include "ffvpx/mediacodec.h"
 #  include "mozilla/java/CodecProxyWrappers.h"
@@ -3114,8 +3117,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
   AVMediaCodecDeviceContext* mediacodecctx =
       (AVMediaCodecDeviceContext*)hwctx->hwctx;
 
-  if (XRE_IsGPUProcess() &&
-      gfx::gfxVars::UseAImageReaderVideoGpuProcessAndroid()) {
+  if (XRE_IsGPUProcess() && gfx::gfxVars::ForceAImageReaderAndroid()) {
     MOZ_ASSERT(!mAndroidImageReader);
     mAndroidImageReader = layers::AndroidImageReader::Create();
   }

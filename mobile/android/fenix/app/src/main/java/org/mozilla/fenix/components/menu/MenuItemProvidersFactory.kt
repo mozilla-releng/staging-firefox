@@ -95,6 +95,7 @@ class MenuItemProvidersFactory(
     private val menuViewScope: CoroutineScope,
     private val applicationScope: CoroutineScope,
 ) {
+
     /** Build a [MenuItemProvider] for the given [FenixMenuItem]. */
     @Suppress("LongMethod", "CyclomaticComplexMethod")
     fun buildProviderFor(item: FenixMenuItem): MenuItemProvider =
@@ -181,6 +182,7 @@ class MenuItemProvidersFactory(
                     browserStore = browserStore,
                     target = target,
                     goBack = useCases.sessionUseCases.goBack,
+                    settings = settings,
                     scope = menuViewScope,
                 )
 
@@ -272,6 +274,7 @@ class MenuItemProvidersFactory(
                 OpenInFirefoxMenuItemProvider(
                     appName = context.getString(R.string.app_name),
                     appStore = appStore,
+                    target = target,
                 )
 
             FenixMenuItem.SaveAsPdf ->

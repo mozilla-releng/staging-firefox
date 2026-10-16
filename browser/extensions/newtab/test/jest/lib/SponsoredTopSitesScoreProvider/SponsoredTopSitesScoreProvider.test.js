@@ -15,6 +15,7 @@ describe("SponsoredTopSitesScoreProvider", () => {
   let prefStore;
   let getFlags;
   let logConsole;
+  let placesObservers;
   let provider;
 
   const PREF_LAST_TIME =
@@ -51,6 +52,7 @@ describe("SponsoredTopSitesScoreProvider", () => {
     prefStore = {};
     getFlags = jest.fn().mockReturnValue({});
     logConsole = { debug: jest.fn() };
+    placesObservers = { addListener: jest.fn(), removeListener: jest.fn() };
     restoreGlobals = stubGlobals({
       RemoteSettings: rsFactory,
       Services: {
@@ -73,7 +75,9 @@ describe("SponsoredTopSitesScoreProvider", () => {
       PlacesUtils: {
         getReversedHost: url => `${url.host.split("").reverse().join("")}.`,
         history: { TRANSITIONS: { LINK: 1, TYPED: 2, BOOKMARK: 3 } },
+        observers: placesObservers,
       },
+      PlacesVisitRemoved: { REASON_DELETED: 0, REASON_EXPIRED: 1 },
       NewTabUtils: {
         activityStreamProvider: { executePlacesQuery },
       },
@@ -130,6 +134,23 @@ describe("SponsoredTopSitesScoreProvider", () => {
       expect(rsClient.get).not.toHaveBeenCalled();
     });
 
+    it("listens for history removals once", () => {
+      const onPlacesEvent = jest
+        .spyOn(provider, "_onPlacesEvent")
+        .mockImplementation(() => {});
+      placesObservers.addListener.mockClear();
+
+      provider.init(getFlags);
+      provider.init(getFlags);
+
+      expect(placesObservers.addListener).toHaveBeenCalledTimes(1);
+      const [[eventTypes, listener]] = placesObservers.addListener.mock.calls;
+      expect(eventTypes).toEqual(["history-cleared", "page-removed"]);
+      const events = [{ type: "history-cleared" }];
+      listener(events);
+      expect(onPlacesEvent).toHaveBeenCalledWith(events);
+    });
+
     it("restores persisted scores from the cache", async () => {
       cacheStore.scores = { "example.com": 5 };
 
@@ -182,6 +203,86 @@ describe("SponsoredTopSitesScoreProvider", () => {
       await expect(provider.getScores()).resolves.toEqual({});
       await Promise.resolve();
       expect(logConsole.debug).toHaveBeenCalledWith(expect.any(String), error);
+    });
+  });
+
+  describe("#clearData", () => {
+    it("clears the scores and history and restarts the release interval", async () => {
+      cacheStore.scores = { t1: 0.3 };
+      cacheStore.scoreHistory = [{ day: 100, scores: { t1: 0.31 } }];
+      jest.spyOn(provider, "_getLastReleaseTime").mockReturnValue(1000);
+
+      await provider.clearData();
+
+      expect(cacheStore.scores).toEqual({});
+      expect(cacheStore.scoreHistory).toEqual([]);
+      expect(prefStore[PREF_LAST_TIME]).toBe(Math.round(Date.now() / 1000));
+    });
+
+    it("waits for a running refresh before clearing", async () => {
+      cacheStore.scores = { t1: 0.3 };
+      let finishRefresh;
+      jest.spyOn(provider, "_refreshScores").mockReturnValue(
+        new Promise(resolve => {
+          finishRefresh = () => {
+            cacheStore.scores = { t2: 0.5 };
+            resolve();
+          };
+        })
+      );
+      jest.spyOn(provider, "_getLastReleaseTime").mockReturnValue(1000);
+      await provider.getScores();
+
+      const clearing = provider.clearData();
+      // Give the clear every chance to run while the refresh is still going.
+      for (let i = 0; i < 10; i++) {
+        await Promise.resolve();
+      }
+      expect(cacheStore.scores).toEqual({ t1: 0.3 });
+
+      finishRefresh();
+      await clearing;
+      expect(cacheStore.scores).toEqual({});
+    });
+
+    it("does not write anything when no scores were stored or released", async () => {
+      jest.spyOn(provider, "_getLastReleaseTime").mockReturnValue(0);
+
+      await provider.clearData();
+
+      expect(cacheStore).toEqual({});
+      expect(prefStore).toEqual({});
+    });
+  });
+
+  describe("#_onPlacesEvent", () => {
+    let clearData;
+
+    beforeEach(() => {
+      clearData = jest.spyOn(provider, "clearData").mockResolvedValue();
+    });
+
+    it("clears the data when all history is cleared", () => {
+      provider._onPlacesEvent([{ type: "history-cleared" }]);
+
+      expect(clearData).toHaveBeenCalledTimes(1);
+    });
+
+    it("clears the data once when the user removes pages", () => {
+      provider._onPlacesEvent([
+        { type: "page-removed", reason: PlacesVisitRemoved.REASON_DELETED },
+        { type: "page-removed", reason: PlacesVisitRemoved.REASON_DELETED },
+      ]);
+
+      expect(clearData).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignores pages removed by history expiration", () => {
+      provider._onPlacesEvent([
+        { type: "page-removed", reason: PlacesVisitRemoved.REASON_EXPIRED },
+      ]);
+
+      expect(clearData).not.toHaveBeenCalled();
     });
   });
 
@@ -305,6 +406,17 @@ describe("SponsoredTopSitesScoreProvider", () => {
       provider.uninit();
 
       expect(provider._rs).toBeNull();
+    });
+
+    it("stops listening for history removals", () => {
+      const [[, listener]] = placesObservers.addListener.mock.calls;
+
+      provider.uninit();
+
+      expect(placesObservers.removeListener).toHaveBeenCalledWith(
+        ["history-cleared", "page-removed"],
+        listener
+      );
     });
   });
 

@@ -226,7 +226,10 @@ class ErrorSummaryFormatter(BaseFormatter):
                     data["group"] = self._clean_test_name(item["test"])
 
             # unlike test group summary, if we crash expect error unless expected
-            if (
+            # or logged quietly (e.g. the test will be retried)
+            if item.get("quiet"):
+                pass
+            elif (
                 (
                     "expected" in item
                     and "status" in item

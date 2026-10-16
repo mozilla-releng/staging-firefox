@@ -9,7 +9,7 @@ import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
 import { WidgetsManagementPanel } from "content-src/components/Nova/CustomizeMenu/WidgetsManagementPanel/WidgetsManagementPanel";
 
-// The nine active widgets in registry order, kept as literals so a renamed
+// The active widgets in registry order, kept as literals so a renamed
 // string, id or telemetry source fails here. The rendered order is pinned by
 // EN_US_ORDER and the other order constants below.
 const WIDGETS = [
@@ -93,6 +93,14 @@ const WIDGETS = [
     preference: "widgets.horoscopes.enabled",
     widgetSize: "medium",
   },
+  {
+    id: "travel",
+    l10nId: "newtab-custom-widget-travel-toggle",
+    source: "WIDGET_TRAVEL",
+    widget_name: "travel",
+    preference: "widgets.travel.enabled",
+    widgetSize: "medium",
+  },
 ];
 
 // The minimum entry the panel renders from; the registry helpers tolerate the
@@ -119,13 +127,14 @@ const PANEL_LABELS = {
   "newtab-custom-widget-search-toggle": "Search",
   "newtab-custom-widget-stocks-toggle2": "Finance",
   "newtab-custom-widget-timer-toggle": "Timer",
+  "newtab-custom-widget-travel-toggle": "Travel",
   "newtab-custom-widget-weather-toggle": "Weather",
   "newtab-custom-widget-fixture-toggle": "Fixture widget",
 };
 
 // The German, Greek and Japanese labels are Firefox's own translations, apart
-// from the fixture widget's, the Japanese Search label and the Horoscopes
-// labels, which have no translations yet. The Finance fixtures reuse the Stocks
+// from the fixture widget's, the Japanese Search label, and the Horoscopes and
+// Travel labels, which have no translations yet. The Finance fixtures reuse the Stocks
 // translations as stand-ins until the renamed message is translated.
 // Übersicht sorts before Uhr only under locale-aware collation; a code point
 // comparison would put it after Wetter.
@@ -136,6 +145,7 @@ const GERMAN_PANEL_LABELS = {
   "newtab-custom-widget-horoscopes-toggle": "Horoskope",
   "newtab-custom-widget-crossword-toggle": "Kreuzworträtsel",
   "newtab-custom-widget-lists-toggle": "Listen",
+  "newtab-custom-widget-travel-toggle": "Reisen",
   "newtab-custom-widget-search-toggle": "Suche",
   "newtab-custom-widget-timer-toggle": "Timer",
   "newtab-custom-widget-fixture-toggle": "Übersicht",
@@ -153,6 +163,7 @@ const GREEK_PANEL_LABELS = {
   "newtab-custom-widget-stocks-toggle2": "Μετοχές",
   "newtab-custom-widget-clock-toggle": "Ρολόι",
   "newtab-custom-widget-crossword-toggle": "Σταυρόλεξο",
+  "newtab-custom-widget-travel-toggle": "Ταξίδια",
   "newtab-custom-widget-horoscopes-toggle": "Ωροσκόπια",
 };
 
@@ -162,6 +173,7 @@ const JAPANESE_PANEL_LABELS = {
   "newtab-custom-widget-lists-toggle": "ToDo リスト",
   "newtab-custom-widget-crossword-toggle": "クロスワードパズル",
   "newtab-custom-widget-timer-toggle": "タイマー",
+  "newtab-custom-widget-travel-toggle": "トラベル",
   "newtab-custom-widget-privacy-toggle": "プライバシー",
   "newtab-custom-widget-horoscopes-toggle": "ホロスコープ",
   "newtab-custom-widget-picture-toggle": "今日の一枚",
@@ -182,6 +194,7 @@ const EN_US_ORDER = [
   "privacy",
   "recentSearches",
   "focusTimer",
+  "travel",
   "weather",
 ];
 
@@ -197,6 +210,7 @@ const EN_US_ORDER_WITH_FIXTURE = [
   "privacy",
   "recentSearches",
   "focusTimer",
+  "travel",
   "weather",
 ];
 
@@ -207,6 +221,7 @@ const GERMAN_ORDER = [
   "horoscopes",
   "crossword",
   "lists",
+  "travel",
   "recentSearches",
   "focusTimer",
   "fixtureWidget",
@@ -224,6 +239,7 @@ const GREEK_ORDER = [
   "stocks",
   "clocks",
   "crossword",
+  "travel",
   "horoscopes",
 ];
 
@@ -231,6 +247,7 @@ const JAPANESE_ORDER = [
   "lists",
   "crossword",
   "focusTimer",
+  "travel",
   "privacy",
   "horoscopes",
   "pictureOfTheDay",
@@ -252,6 +269,7 @@ const TIMER_ID_SORT_ORDER = [
   "pictureOfTheDay",
   "privacy",
   "recentSearches",
+  "travel",
   "weather",
 ];
 
@@ -266,6 +284,7 @@ const ID_ORDER = [
   "privacy",
   "recentSearches",
   "stocks",
+  "travel",
   "weather",
 ];
 
@@ -606,6 +625,7 @@ describe("<WidgetsManagementPanel>", () => {
         "pictureOfTheDay-toggle",
         "recentSearches-toggle",
         "focusTimer-toggle",
+        "travel-toggle",
         "weather-toggle",
       ]);
     });

@@ -38,6 +38,8 @@ const lazy = XPCOMUtils?.declareLazy({
  *   The type of the autofill.
  * @property {string} [adaptiveHistoryInput]
  *   The input string associated with this autofill item.
+ * @property {boolean} [noVisitAction]
+ *   Whether the view should not show a "Visit" action.
  */
 
 /**

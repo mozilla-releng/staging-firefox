@@ -22,6 +22,7 @@ function makeTab({
   busy = false,
   label = "Example Page",
   iconUrl = null,
+  lastAccessed = 0,
 } = {}) {
   return {
     pinned,
@@ -29,6 +30,7 @@ function makeTab({
     group,
     hidden,
     label,
+    lastAccessed,
     hasAttribute(attr) {
       return attr === "busy" && busy;
     },
@@ -127,6 +129,31 @@ add_task(function test_getCandidateTabs_excludesStillLoadingTabs() {
     [loaded],
     "Still-loading and untitled tabs are excluded so clustering sees resolved titles"
   );
+});
+
+add_task(function test_getCandidateTabs_keepsMostRecentlyUsedPastTheCap() {
+  const PREF = "browser.smartwindow.autoTabGrouping.maxCandidateTabs";
+  const tabs = [5, 1, 4, 2, 3].map(lastAccessed =>
+    makeTab({ url: `https://${lastAccessed}.example/`, lastAccessed })
+  );
+  const win = makeWin(tabs);
+  try {
+    Services.prefs.setIntPref(PREF, 5);
+    Assert.deepEqual(
+      AutoTabGroupingSuggestions.getCandidateTabs(win),
+      tabs,
+      "A window at the cap keeps every tab"
+    );
+
+    Services.prefs.setIntPref(PREF, 3);
+    Assert.deepEqual(
+      AutoTabGroupingSuggestions.getCandidateTabs(win),
+      [tabs[0], tabs[2], tabs[4]],
+      "Past the cap, the most recently used tabs are kept in tab strip order"
+    );
+  } finally {
+    Services.prefs.clearUserPref(PREF);
+  }
 });
 
 add_task(function test_selectClusters_filtersSortsAndCaps() {
@@ -635,6 +662,8 @@ add_task(async function test_nimbus_overwrites_atg_prefs() {
   // restart (not this session), so this asserts the override, not restoration.
   const PREF_MIN_CANDIDATE_TABS =
     "browser.smartwindow.autoTabGrouping.minCandidateTabs";
+  const PREF_MAX_CANDIDATE_TABS =
+    "browser.smartwindow.autoTabGrouping.maxCandidateTabs";
   const PREF_MIN_COHESION = "browser.smartwindow.autoTabGrouping.minCohesion";
   const PREF_SUPPORTED_LOCALES =
     "browser.smartwindow.autoTabGrouping.supportedLocales";
@@ -644,6 +673,7 @@ add_task(async function test_nimbus_overwrites_atg_prefs() {
 
   const defaults = Services.prefs.getDefaultBranch("");
   defaults.setIntPref(PREF_MIN_CANDIDATE_TABS, 2);
+  defaults.setIntPref(PREF_MAX_CANDIDATE_TABS, 200);
   defaults.setCharPref(PREF_MIN_COHESION, "0.15");
   defaults.setCharPref(PREF_SUPPORTED_LOCALES, "en");
   defaults.setIntPref(PREF_THRESHOLD, 650);
@@ -659,6 +689,7 @@ add_task(async function test_nimbus_overwrites_atg_prefs() {
     featureId: "autoTabGrouping",
     value: {
       minCandidateTabs: 5,
+      maxCandidateTabs: 150,
       minCohesion: "0.5",
       supportedLocales: "en,fr",
       thresholdInt: 700,
@@ -670,6 +701,11 @@ add_task(async function test_nimbus_overwrites_atg_prefs() {
     Services.prefs.getIntPref(PREF_MIN_CANDIDATE_TABS),
     5,
     "enrolling overwrites the int pref (minCandidateTabs)"
+  );
+  Assert.equal(
+    Services.prefs.getIntPref(PREF_MAX_CANDIDATE_TABS),
+    150,
+    "enrolling overwrites the tab cap (maxCandidateTabs)"
   );
   // minCohesion is a float stored as a string pref; the Nimbus variable is typed
   // string, so the enrolled value must arrive verbatim in the string pref.

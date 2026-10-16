@@ -26,7 +26,7 @@ address bar. An example of a mochitest is
 
 ### XPCShell
 
-[XPCShell Tests](https://firefox-source-docs.mozilla.org/testing/xpcshell/index.html) are another type of test relevant to the address bar. XPCShell tests
+{doc}`XPCShell Tests </testing/xpcshell/index>` are another type of test relevant to the address bar. XPCShell tests
 are often called unit tests because they tend to test specific modules or
 components in isolation, as opposed the mochitest which have access to the full
 browser chrome.

@@ -50,6 +50,13 @@ prefs = [
   "javascript.options.experimental.error_iserror=true",
 ]
 
+["test_file_copyTo_permissions.js"]
+# Unix permissions on directories only prevent creating children on Linux and macOS.
+run-if = [
+  "os == 'linux'",
+  "os == 'mac'",
+]
+
 ["test_file_createUnique.js"]
 
 ["test_file_equality.js"]

@@ -195,8 +195,8 @@ export const VALID_CREDIT_CARD_FIELDS = [
   "cc-exp-month",
   "cc-exp-year",
   "cc-type",
-  // TODO: Uncomment this when storage is ready.
-  // "cc-csc",
+  // cc-csc is kept only as an unknown field here. RustAutofillCreditCardsAdapter
+  // is the store that holds it as a field of its own.
 ];
 
 const VALID_CREDIT_CARD_COMPUTED_FIELDS = [
@@ -1743,6 +1743,10 @@ export class CreditCardsBase extends AutofillRecords {
     );
   }
 
+  _recordReadProcessor(creditCard) {
+    lazy.CreditCardRecord.stripSecurityCodeWhenDisabled(creditCard);
+  }
+
   async computeFields(creditCard) {
     // NOTE: Remember to bump the schema version number if any of the existing
     //       computing algorithm changes. (No need to bump when just adding new
@@ -2008,7 +2012,9 @@ export class CreditCardsBase extends AutofillRecords {
       );
 
       if (decrypted == record["cc-number"]) {
-        yield recordInStorage;
+        const clonedRecord = this._cloneAndCleanUp(recordInStorage);
+        this._recordReadProcessor(clonedRecord);
+        yield clonedRecord;
       }
     }
     return null;

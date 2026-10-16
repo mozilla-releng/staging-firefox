@@ -910,13 +910,13 @@ JSOutOfMemory:
   glean:
     metric: memory
 
-
 LastInteractionDuration:
   description: >
     How long the user had been inactive in seconds if the user was inactive
     at crash.  The value is not set if the user state was active.
   type: u64
   scope: ping
+  skip_if: "0"
   glean:
     type: timespan
     time_unit: second

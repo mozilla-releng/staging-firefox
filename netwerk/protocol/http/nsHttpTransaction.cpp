@@ -517,10 +517,10 @@ void nsHttpTransaction::SetH2WSConnRefTaken() {
 
 UniquePtr<nsHttpResponseHead> nsHttpTransaction::TakeResponseHeadAndConnInfo(
     nsHttpConnectionInfo** aOut) {
-  MOZ_ASSERT(!mResponseHeadTaken, "TakeResponseHead called 2x");
-
   // Lock TakeResponseHead() against main thread
   MutexAutoLock lock(mLock);
+
+  MOZ_ASSERT(!mResponseHeadTaken, "TakeResponseHead called 2x");
 
   if (aOut) {
     RefPtr<nsHttpConnectionInfo> connInfo = mFinalizedConnInfo;
@@ -540,10 +540,10 @@ UniquePtr<nsHttpResponseHead> nsHttpTransaction::TakeResponseHeadAndConnInfo(
 }
 
 UniquePtr<nsHttpHeaderArray> nsHttpTransaction::TakeResponseTrailers() {
-  MOZ_ASSERT(!mResponseTrailersTaken, "TakeResponseTrailers called 2x");
-
   // Lock TakeResponseTrailers() against main thread
   MutexAutoLock lock(mLock);
+
+  MOZ_ASSERT(!mResponseTrailersTaken, "TakeResponseTrailers called 2x");
 
   mResponseTrailersTaken = true;
   return std::move(mForTakeResponseTrailers);
@@ -3614,8 +3614,7 @@ void nsHttpTransaction::SetHttpTrailers(nsCString& aTrailers) {
   // Introduce a local variable to minimize the critical section.
   UniquePtr<nsHttpHeaderArray> httpTrailers =
       std::make_unique<nsHttpHeaderArray>();
-  // Given it's usually null, use double-check locking for performance.
-  if (mForTakeResponseTrailers) {
+  {
     MutexAutoLock lock(mLock);
     if (mForTakeResponseTrailers) {
       // Copy the trailer. |TakeResponseTrailers| gets the original trailer

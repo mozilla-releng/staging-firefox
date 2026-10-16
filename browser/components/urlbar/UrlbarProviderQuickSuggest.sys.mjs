@@ -6,10 +6,9 @@ import {
   UrlbarProvider,
   UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   ContentRelevancyManager:
     "resource://gre/modules/ContentRelevancyManager.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
@@ -299,7 +298,7 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
    * @returns {object} An object of view template.
    */
   getViewTemplate(result) {
-    return lazy.QuickSuggest.getFeatureByResult(result)?.getViewTemplate?.(
+    return lazy.QuickSuggest.getFeatureByResult(result)?.getViewTemplate(
       result
     );
   }
@@ -312,7 +311,7 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
    * @returns {object}
    */
   getViewUpdate(result, controller) {
-    return lazy.QuickSuggest.getFeatureByResult(result)?.getViewUpdate?.(
+    return lazy.QuickSuggest.getFeatureByResult(result)?.getViewUpdate(
       result,
       controller
     );

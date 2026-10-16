@@ -60,6 +60,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SystemTickFeed: "resource://newtab/lib/SystemTickFeed.sys.mjs",
   TelemetryFeed: "resource://newtab/lib/TelemetryFeed.sys.mjs",
   TimerFeed: "resource://newtab/lib/Widgets/TimerFeed.sys.mjs",
+  TravelFeed: "resource://newtab/lib/Widgets/TravelFeed.sys.mjs",
   TopSitesFeed: "resource://newtab/lib/TopSitesFeed.sys.mjs",
   TopStoriesFeed: "resource://newtab/lib/TopStoriesFeed.sys.mjs",
   WallpaperFeed: "resource://newtab/lib/Wallpapers/WallpaperFeed.sys.mjs",
@@ -1884,6 +1885,22 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.travel.enabled",
+    {
+      title: "Enables the travel widget",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      getValue: () => !marketGateEnabled(),
+    },
+  ],
+  [
+    "widgets.travel.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the travel widget",
+      value: false,
+    },
+  ],
+  [
     "widgets.pictureOfTheDay.enabled",
     {
       title: "Enables the picture of the day widget",
@@ -1918,6 +1935,14 @@ export const PREFS_CONFIG = new Map([
     "widgets.system.horoscopes.enabled",
     {
       title: "Enables the horoscopes widget experiment in Nimbus",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      value: false,
+    },
+  ],
+  [
+    "widgets.system.travel.enabled",
+    {
+      title: "Enables the travel widget experiment in Nimbus",
       // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
       value: false,
     },
@@ -2053,6 +2078,13 @@ export const PREFS_CONFIG = new Map([
     "widgets.horoscopes.size",
     {
       title: "Size of the horoscopes widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.travel.size",
+    {
+      title: "Size of the travel widget (medium or large)",
       value: "",
     },
   ],
@@ -2695,6 +2727,12 @@ const FEEDS_DATA = [
     name: "timerfeed",
     factory: () => new lazy.TimerFeed(),
     title: "Handles the data for the Timer widget",
+    value: true,
+  },
+  {
+    name: "travelfeed",
+    factory: () => new lazy.TravelFeed(),
+    title: "Handles the data for the Travel widget",
     value: true,
   },
   {

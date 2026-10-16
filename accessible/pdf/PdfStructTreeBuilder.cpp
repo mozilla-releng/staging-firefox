@@ -106,6 +106,8 @@ int PdfStructTreeBuilder::GetPdfId(uint64_t aInnerWindowId, uint64_t aAccId) {
         return SkPDF::NodeID::PaginationHeaderArtifact;
       case SpecialId::PageFooter:
         return SkPDF::NodeID::PaginationFooterArtifact;
+      case SpecialId::OtherArtifact:
+        return SkPDF::NodeID::OtherArtifact;
       default:
         MOZ_ASSERT_UNREACHABLE("Invalid special acc id");
     }
@@ -131,6 +133,15 @@ PdfStructTreeBuilder::GlobalAccessibleId PdfStructTreeBuilder::GetAccId(
   nsIContent* content = aFrame->GetContent();
   if (!content) {
     return {};
+  }
+  if (content->IsText()) {
+    nsINode* parent = content->GetParent();
+    if (parent->IsMathMLElement()) {
+      // Inside MathML, we can't represent a TextLeafAccessible as a separate
+      // PDF structure element, as NonStruct isn't valid in a PDF MathML
+      // subtree. Therefore, map any content to the parent MathML element.
+      content = parent->AsContent();
+    }
   }
   dom::Document* doc = content->OwnerDoc();
   // This should only ever be called for a document being printed and those are
@@ -231,10 +242,22 @@ int PdfStructTreeBuilder::GeneratePdfId(Accessible* aAcc) {
   return entry->value();
 }
 
-void PdfStructTreeBuilder::BuildStructSubtree(
-    Accessible* aAcc, SkPDF::StructureElementNode& aPdf) {
+void PdfStructTreeBuilder::BuildStructSubtree(Accessible* aAcc,
+                                              SkPDF::StructureElementNode& aPdf,
+                                              bool aInMath) {
+  role accRole = aAcc->Role();
+  if (!aInMath && accRole == roles::MATHML_MATH) {
+    // MathML must be contained inside a Formula node. That doesn't exist in the
+    // Gecko accessibility tree, so manufacture this wrapper here.
+    aPdf.fNodeId = ++mLastPdfId;
+    aPdf.fTypeString = "Formula";
+    aPdf.fChildVector.resize(1);
+    aPdf.fChildVector[0] = std::make_unique<SkPDF::StructureElementNode>();
+    BuildStructSubtree(aAcc, *aPdf.fChildVector[0], true);
+    return;
+  }
   aPdf.fNodeId = GeneratePdfId(aAcc);
-  switch (aAcc->Role()) {
+  switch (accRole) {
     case roles::ARTICLE:
       aPdf.fTypeString = "Art";
       break;
@@ -294,13 +317,15 @@ void PdfStructTreeBuilder::BuildStructSubtree(
       // this?
       break;
     case roles::HEADING: {
-      // For the PDF outline, SkPDF can accumulate text from headings itself,
-      // but it requires that glyph runs include text, whereas we provide glyph
-      // indexes when drawing. Rather than plumbing the text through to the draw
-      // target, we instead explicitly provide the heading name as alt text
-      // here, since it's readily available.
-      AccNameToPdfAlt(aAcc, aPdf);
-      aPdf.fExposeAlt = false;
+      // For the PDF outline, SkPDF accumulates the title text itself from
+      // the glyph runs drawn within the heading. However, if the accessible
+      // name doesn't come from the heading's own content (e.g. aria-label),
+      // that text never appears in the rendered glyphs, so provide it
+      // explicitly as alt text in that case.
+      nsAutoString name;
+      if (aAcc->Name(name) != eNameFromSubtree && !name.IsEmpty()) {
+        aPdf.fAlt = SkString(NS_ConvertUTF16toUTF8(name).get());
+      }
       int32_t level = aAcc->GroupPosition().level;
       // PDF has H1 through H6.
       if (1 <= level && level <= 6) {
@@ -329,6 +354,123 @@ void PdfStructTreeBuilder::BuildStructSubtree(
       break;
     case roles::LISTITEM_MARKER:
       aPdf.fTypeString = "Lbl";
+      break;
+    case roles::MATHML_CELL:
+      aPdf.fTypeString = "mtd";
+      break;
+    case roles::MATHML_EMPTY_GROUP:
+    case roles::MATHML_ROW:
+    case roles::MATHML_TEXT: {
+      // These MathML roles are shared by several different elements which don't
+      // have a common PDF tag, so we use the actual tag name instead.
+      nsAutoString tagName;
+      aAcc->TagName()->ToString(tagName);
+      aPdf.fTypeString = SkString(NS_ConvertUTF16toUTF8(tagName).get());
+      break;
+    }
+    case roles::MATHML_ENCLOSED:
+      aPdf.fTypeString = "menclose";
+      // XXX Expose attributes: notation
+      break;
+    case roles::MATHML_ERROR:
+      aPdf.fTypeString = "merror";
+      break;
+    case roles::MATHML_FRACTION:
+      aPdf.fTypeString = "mfrac";
+      // XXX Expose attributes: bevelled, linethickness
+      break;
+    case roles::MATHML_GLYPH:
+      aPdf.fTypeString = "mglyph";
+      break;
+    case roles::MATHML_IDENTIFIER:
+      aPdf.fTypeString = "mi";
+      break;
+    case roles::MATHML_LABELED_ROW:
+      aPdf.fTypeString = "mlabeledtr";
+      break;
+    case roles::MATHML_LINK:
+      aPdf.fTypeString = "a";
+      break;
+    case roles::MATHML_LONG_DIVISION:
+      aPdf.fTypeString = "mlongdiv";
+      // XXX Expose attributes: longdivstyle
+      break;
+    case roles::MATHML_MATH:
+      aPdf.fTypeString = "math";
+      // We only specify the namespace on the math element, since an unspecified
+      // namespace inherits from the parent.
+      aPdf.fNamespace = "http://www.w3.org/1998/Math/MathML";
+      break;
+    case roles::MATHML_MULTISCRIPTS:
+      aPdf.fTypeString = "mmultiscripts";
+      break;
+    case roles::MATHML_NUMBER:
+      aPdf.fTypeString = "mn";
+      break;
+    case roles::MATHML_OPERATOR:
+      aPdf.fTypeString = "mo";
+      // XXX Expose attributes: accent, fence, separator, largeop
+      break;
+    case roles::MATHML_OVER:
+      aPdf.fTypeString = "mover";
+      // XXX Expose attributes: accent, align
+      break;
+    case roles::MATHML_ROOT:
+      aPdf.fTypeString = "mroot";
+      break;
+    case roles::MATHML_SQUARE_ROOT:
+      aPdf.fTypeString = "msqrt";
+      break;
+    case roles::MATHML_STACK:
+      aPdf.fTypeString = "mstack";
+      // XXX Expose attributes: align, position
+      break;
+    case roles::MATHML_STACK_CARRIES:
+      aPdf.fTypeString = "mscarries";
+      // XXX Expose attributes: location, position
+      break;
+    case roles::MATHML_STACK_CARRY:
+      aPdf.fTypeString = "mscarry";
+      // XXX Expose attributes: crossout
+      break;
+    case roles::MATHML_STACK_GROUP:
+      aPdf.fTypeString = "msgroup";
+      // XXX Expose attributes: position, shift
+      break;
+    case roles::MATHML_STACK_LINE:
+      aPdf.fTypeString = "msline";
+      // XXX Expose attributes: position
+      break;
+    case roles::MATHML_STACK_ROW:
+      aPdf.fTypeString = "msrow";
+      // XXX Expose attributes: position
+      break;
+    case roles::MATHML_STYLE:
+      aPdf.fTypeString = "mstyle";
+      break;
+    case roles::MATHML_SUB:
+      aPdf.fTypeString = "msub";
+      break;
+    case roles::MATHML_SUB_SUP:
+      aPdf.fTypeString = "msubsup";
+      break;
+    case roles::MATHML_SUP:
+      aPdf.fTypeString = "msup";
+      break;
+    case roles::MATHML_TABLE:
+      aPdf.fTypeString = "mtable";
+      // XXX Expose attributes: align, columnlines, rowlines
+      break;
+    case roles::MATHML_TABLE_ROW:
+      aPdf.fTypeString = "mtr";
+      break;
+    case roles::MATHML_UNDER:
+      aPdf.fTypeString = "munder";
+      // XXX Expose attributes: accentunder, align
+      break;
+    case roles::MATHML_UNDER_OVER:
+      aPdf.fTypeString = "munderover";
+      // XXX Expose attributes: accent, accentunder, align
       break;
     case roles::PARAGRAPH:
       aPdf.fTypeString = "P";
@@ -361,7 +503,13 @@ void PdfStructTreeBuilder::BuildStructSubtree(
   aPdf.fChildVector.resize(count);
   for (uint32_t c = 0; c < count; ++c) {
     aPdf.fChildVector[c] = std::make_unique<SkPDF::StructureElementNode>();
-    BuildStructSubtree(aAcc->ChildAt(c), *aPdf.fChildVector[c]);
+    Accessible* child = aAcc->ChildAt(c);
+    if (aInMath && child->IsTextLeaf()) {
+      // For MathML, we map a TextLeafAccessible to the parent MathML element.
+      // See GetAccId().
+      continue;
+    }
+    BuildStructSubtree(child, *aPdf.fChildVector[c], aInMath);
   }
 }
 

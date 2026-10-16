@@ -89,7 +89,7 @@ If something you're doing is causing a crash, having the link to the stack trace
 
 ## HTTP Logs
 
-See the [HTTP Logging](https://firefox-source-docs.mozilla.org/networking/http/logging.html) page for steps to capture HTTP logs.
+See the {doc}`HTTP Logging </networking/http/logging>` page for steps to capture HTTP logs.
 
 If the logs are large you can create a zip archive and attach them to the bug. If the archive is still too large to attach, you can upload it to a file storage service such as Google drive or OneDrive and submit the public link.
 

@@ -286,7 +286,6 @@ contentblocking:
       - emz@mozilla.com
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: h#QUERY_STRIPPING_COUNT
 
   query_stripping_param_count:
     type: custom_distribution
@@ -309,7 +308,6 @@ contentblocking:
       - emz@mozilla.com
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: QUERY_STRIPPING_PARAM_COUNT
 
   query_stripping_count_by_param:
     type: labeled_counter
@@ -352,7 +350,6 @@ contentblocking:
       - emz@mozilla.com
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: h#QUERY_STRIPPING_COUNT_BY_PARAM
 
   email_tracker_count:
     type: labeled_counter

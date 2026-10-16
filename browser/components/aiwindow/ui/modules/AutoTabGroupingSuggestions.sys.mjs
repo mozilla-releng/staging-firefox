@@ -56,6 +56,11 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
+  "maxCandidateTabs",
+  "browser.smartwindow.autoTabGrouping.maxCandidateTabs"
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
   "preloadEnabled",
   "browser.smartwindow.autoTabGrouping.preloadModels"
 );
@@ -280,13 +285,14 @@ export const AutoTabGroupingSuggestions = {
   /**
    * Ungrouped, non-pinned, web-content tabs eligible for clustering. Tabs that
    * are already in a group are excluded so we never re-suggest an existing
-   * group.
+   * group. Past maxCandidateTabs, only the most recently used are kept, in tab
+   * strip order.
    *
    * @param {ChromeWindow} win
    * @returns {MozTabbrowserTab[]}
    */
   getCandidateTabs(win) {
-    return win.gBrowser.tabs.filter(tab => {
+    const tabs = win.gBrowser.tabs.filter(tab => {
       if (tab.pinned || tab.closing || tab.group || tab.hidden) {
         return false;
       }
@@ -298,6 +304,17 @@ export const AutoTabGroupingSuggestions = {
       // new tab / chat pages, etc.
       return uri && (uri.schemeIs("http") || uri.schemeIs("https"));
     });
+    if (tabs.length <= lazy.maxCandidateTabs) {
+      return tabs;
+    }
+    // Clustering time grows quickly with window size, so very large windows
+    // only group their most recently used tabs.
+    const recent = new Set(
+      tabs
+        .toSorted((a, b) => b.lastAccessed - a.lastAccessed)
+        .slice(0, lazy.maxCandidateTabs)
+    );
+    return tabs.filter(tab => recent.has(tab));
   },
 
   /**

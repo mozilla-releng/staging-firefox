@@ -160,7 +160,7 @@
 :any-link:lang(ja),
 :any-link:lang(ko),
 :any-link:lang(zh) {
-  /* stylelint-disable-next-line */
+  /* stylelint-disable-next-line property-no-unknown */
   text-decoration-inset: auto;
 }
 

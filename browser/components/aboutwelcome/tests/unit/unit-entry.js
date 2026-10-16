@@ -143,8 +143,8 @@ const TEST_GLOBAL = {
       return global;
     },
   },
-  ClientEnvironment: {
-    get userId() {
+  ClientEnvironmentBase: {
+    get legacyRandomizationId() {
       return "foo123";
     },
   },

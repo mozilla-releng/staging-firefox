@@ -247,7 +247,6 @@ moz-button.history-menu-button {
     margin-inline: var(--space-small);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     max-width: calc(100% - 2 * var(--space-small));
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: var(--panel-menuitem-border-radius);
   }
 }

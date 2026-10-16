@@ -295,6 +295,24 @@ let JSWINDOWACTORS = {
     enablePreference: "browser.smartwindow.aitab.enabled",
   },
 
+  AgentMonitorItem: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AgentMonitorItemParent.sys.mjs",
+    },
+    child: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AgentMonitorItemChild.sys.mjs",
+      events: {
+        "agent-monitor-item:resolve-titles": { wantUntrusted: true },
+      },
+    },
+    allFrames: true,
+    matches: ["about:aichatcontent", "about:smartwindowtasks"],
+    remoteTypes: ["privilegedabout"],
+    enablePreference: "browser.smartwindow.enabled",
+  },
+
   SmartWindowTasks: {
     parent: {
       esModuleURI:

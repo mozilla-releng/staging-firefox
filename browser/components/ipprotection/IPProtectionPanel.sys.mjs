@@ -151,6 +151,7 @@ export class IPProtectionPanel {
    *  True if the VPN service is in the process of connecting, else false.
    * @property {boolean} isPremium
    * True if the current device has Firefox set as the default browser or the user has a Mozilla VPN subscription and/or unlimited bandwidth
+   * Initially false; recomputed asynchronously before the panel is shown.
    */
 
   /**
@@ -161,6 +162,7 @@ export class IPProtectionPanel {
   components = new WeakSet();
   initiatedUpgrade = false;
   #window = null;
+  #showToken = null;
   #panelView = null;
   #headerButtons = [];
   #locationsClosedByKeyboard = false;
@@ -376,16 +378,15 @@ export class IPProtectionPanel {
     );
   }
 
-  get isDefaultBrowser() {
-    let isDefaultBrowser = lazy.ShellService.isDefaultBrowser();
-    return isDefaultBrowser;
+  async isDefaultBrowser() {
+    return lazy.ShellService.isDefaultBrowserAsync();
   }
 
-  get isPremium() {
+  async isPremium() {
     let isPremium =
       !this.#getBandwidthUsage() ||
       lazy.IPProtectionService.authProvider.hasUpgraded ||
-      this.isDefaultBrowser;
+      (await this.isDefaultBrowser());
     return isPremium;
   }
 
@@ -423,7 +424,7 @@ export class IPProtectionPanel {
       isActivating:
         lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVATING,
       isEnrolling: lazy.IPProtectionService.authProvider.isEnrolling,
-      isPremium: this.isPremium,
+      isPremium: false,
     };
 
     // The progress listener to listen for page navigations.
@@ -524,7 +525,7 @@ export class IPProtectionPanel {
       !!win && lazy.PrivateBrowsingUtils.isWindowPrivate(win);
 
     let country = this.state.location;
-    if (!this.isPremium && country) {
+    if (!(await this.isPremium()) && country) {
       const location = lazy.IPProtectionServerlist.getLocation(country);
       if (location?.country.locked) {
         country = undefined;
@@ -609,7 +610,15 @@ export class IPProtectionPanel {
    * @param {XULElement} panelView
    *   The panelView element from the CustomizableUI widget callback.
    */
-  showing(panelView) {
+  async showing(panelView) {
+    const token = (this.#showToken = {});
+
+    const isPremium = await this.isPremium();
+
+    if (this.#showToken !== token) {
+      return;
+    }
+
     if (this.initiatedUpgrade) {
       lazy.IPProtectionService.authProvider.checkForUpgrade();
       this.initiatedUpgrade = false;
@@ -622,7 +631,7 @@ export class IPProtectionPanel {
     }
 
     this.setState({
-      isPremium: this.isPremium,
+      isPremium,
       isSiteExceptionsEnabled: this.isExceptionsFeatureEnabled,
       isSiteInclusionsEnabled: this.isInclusionsFeatureEnabled,
       bandwidthWarning: this.#shouldShowBandwidthWarning(),
@@ -654,6 +663,11 @@ export class IPProtectionPanel {
     if (!hasUserEverOpenedPanel) {
       Services.prefs.setBoolPref(USER_OPENED_PREF, true);
     }
+
+    // The function has fully completed, until now hiding() treats the panel
+    // as never shown. Keep this last, there must be no early return or await
+    // between the premium check and here.
+    this.#showToken = null;
   }
 
   /**
@@ -662,6 +676,13 @@ export class IPProtectionPanel {
    * Disables updates to the panel.
    */
   hiding() {
+    if (this.#showToken) {
+      // Hidden or cancelled before showing() completed, the panel was never
+      // shown, so only clean up.
+      this.destroy();
+      return;
+    }
+
     const mask = lazy.IPPOnboardingMessage.readPrefMask();
     const hasUsedSiteExceptions = !!(
       mask & ONBOARDING_PREF_FLAGS.EVER_USED_SITE_EXCEPTIONS
@@ -863,6 +884,8 @@ export class IPProtectionPanel {
    * Remove added elements and listeners.
    */
   destroy() {
+    this.#showToken = null;
+
     if (!this.panel) {
       return;
     }

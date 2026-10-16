@@ -1279,7 +1279,7 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     // Capture the load's principal origin now, while the channel is alive, to
     // bind any alt-data written later (after the channel may have been
     // cleared).
-    chan->GetAltDataBindingOrigin(mAltDataBindingOrigin);
+    UpdateAltDataBindingOrigin(chan);
 
     httpChannelImpl->GetCacheKey(&args.cacheKey());
     httpChannelImpl->GetAlternativeDataType(args.altDataType());
@@ -2017,6 +2017,33 @@ NS_INTERFACE_MAP_BEGIN(CacheEntryWriteHandleParent)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
   NS_INTERFACE_MAP_ENTRY(nsICacheEntryWriteHandle)
 NS_INTERFACE_MAP_END
+
+void HttpChannelParent::UpdateAltDataBindingOrigin(HttpBaseChannel* aChannel) {
+  mAltDataBindingOrigin.Truncate();
+
+  nsIPrincipal* principal = aChannel->GetAltDataBindingPrincipal();
+  if (!principal) {
+    return;
+  }
+
+  if (StaticPrefs::network_cache_alt_data_validate_binding_principal()) {
+    ContentParent* cp = nullptr;
+    if (Manager() && Manager()->Manager()) {
+      cp = static_cast<ContentParent*>(Manager()->Manager());
+    }
+    if (!cp ||
+        !cp->ValidatePrincipal(
+            principal, {ValidatePrincipalOptions::AllowSystemIfLoaded})) {
+      LOG(
+          ("HttpChannelParent::UpdateAltDataBindingOrigin [this=%p] principal "
+           "not valid for the content process",
+           this));
+      return;
+    }
+  }
+
+  principal->GetOrigin(mAltDataBindingOrigin);
+}
 
 // Records, atomically with the alt-data write, the origin of the principal
 // that produced the alt-data.

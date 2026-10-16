@@ -1341,7 +1341,7 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
                                    timestamp);
 
 #ifdef MOZ_WAYLAND
-      if (auto* toplevelWayland = toplevelWindow->AsWaylandToplevel()) {
+      if (auto* toplevelWayland = toplevelWindow->AsWayland()) {
         auto existingToken =
             std::move(toplevelWayland->mWindowActivationTokenFromEnv);
         if (!existingToken.IsEmpty()) {
@@ -2716,7 +2716,7 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
 
     if (dragWindow) {
 #ifdef MOZ_WAYLAND
-      if (AsWaylandToplevel() && AsWaylandToplevel()->PIPMove()) {
+      if (AsWayland() && AsWayland()->PIPMove()) {
         // The ungrab is needed because the compositor won't send a button
         // release event. GDK may get stuck thinking that the implicit grab is
         // still active.
@@ -3019,7 +3019,7 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
       return;
     }
 #ifdef MOZ_WAYLAND
-    if (AsWaylandToplevel() && AsWaylandToplevel()->PIPResize(*edge)) {
+    if (AsWayland() && AsWayland()->PIPResize(*edge)) {
       // The ungrab is needed because the compositor won't send a button release
       // event. GDK may get stuck thinking that the implicit grab is still
       // active.
@@ -4063,8 +4063,8 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
 
           bool moved = false;
 #ifdef MOZ_WAYLAND
-          if (AsWaylandToplevel()) {
-            moved = AsWaylandToplevel()->PIPMove();
+          if (AsWayland()) {
+            moved = AsWayland()->PIPMove();
           }
 #endif
           if (!moved) {
@@ -4824,8 +4824,8 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   }
 
 #ifdef MOZ_WAYLAND
-  if (auto* popup = AsWaylandPopup()) {
-    popup->NativeMoveResizeWaylandPopup(aMoved, aResized);
+  if (IsWaylandPopup()) {
+    AsWayland()->NativeMoveResizeWaylandPopup(aMoved, aResized);
   } else
 #endif
   {
@@ -5096,16 +5096,15 @@ void nsWindow::UpdateOpaqueRegionInternal() {
       LOG("nsWindow::UpdateOpaqueRegionInternal() window is transparent");
     }
     gdk_window_set_opaque_region(window, region);
-
-#ifdef MOZ_WAYLAND
-    if (GdkIsWaylandDisplay()) {
-      AsWayland()->SetToplevelOpaqueRegion(region);
-      mSurface->SetOpaqueRegion(mOpaqueRegion.ToUnknownRegion());
-    }
-#endif
     if (region) {
       cairo_region_destroy(region);
     }
+
+#ifdef MOZ_WAYLAND
+    if (GdkIsWaylandDisplay()) {
+      mSurface->SetOpaqueRegion(mOpaqueRegion.ToUnknownRegion());
+    }
+#endif
   }
 }
 
@@ -7313,15 +7312,11 @@ nsresult nsWindow::GetSystemFont(nsCString& aFontName) {
   return NS_OK;
 }
 
-static already_AddRefed<nsIWidget> CreateWindow(bool aToplevel) {
+static already_AddRefed<nsIWidget> CreateWindow() {
   nsCOMPtr<nsIWidget> window;
 #ifdef MOZ_WAYLAND
   if (GdkIsWaylandDisplay()) {
-    if (aToplevel) {
-      window = new nsWindowWaylandToplevel();
-    } else {
-      window = new nsWindowWaylandPopup();
-    }
+    window = new nsWindowWayland();
   }
 #endif
 #ifdef MOZ_X11
@@ -7334,12 +7329,12 @@ static already_AddRefed<nsIWidget> CreateWindow(bool aToplevel) {
 }
 
 already_AddRefed<nsIWidget> nsIWidget::CreateTopLevelWindow() {
-  nsCOMPtr<nsIWidget> window = CreateWindow(/* aToplevel */ true);
+  nsCOMPtr<nsIWidget> window = CreateWindow();
   return window.forget();
 }
 
 already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
-  nsCOMPtr<nsIWidget> window = CreateWindow(/* aToplevel */ false);
+  nsCOMPtr<nsIWidget> window = CreateWindow();
   return window.forget();
 }
 
@@ -7448,8 +7443,8 @@ void nsWindow::OnUnmap() {
   LOG("nsWindow::OnUnmap");
 
 #ifdef MOZ_WAYLAND
-  if (auto* toplevel = AsWaylandToplevel()) {
-    toplevel->ClearPipResources();
+  if (AsWayland()) {
+    AsWayland()->ClearPipResources();
   }
 #endif
 

@@ -14,6 +14,7 @@
 #include "gfxHarfBuzzShaper.h"
 #include "gfxPlatformFontList.h"
 #include "gfxUserFontSet.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MruCache.h"
@@ -30,6 +31,7 @@
 #include "mozilla/intl/String.h"
 #include "mozilla/intl/UnicodeProperties.h"
 #include "nsLayoutUtils.h"
+#include "nsReadableUtils.h"
 #include "nsStyleConsts.h"
 #include "nsStyleUtil.h"
 #include "nsUnicodeProperties.h"
@@ -128,7 +130,9 @@ bool gfxTextRun::NeedsGlyphExtents() const {
 void* gfxTextRun::AllocateStorageForTextRun(size_t aSize, uint32_t aLength) {
   // Allocate the storage we need, returning nullptr on failure rather than
   // throwing an exception (because web content can create huge runs).
-  void* storage = malloc(aSize + aLength * sizeof(CompressedGlyph));
+  CheckedInt<size_t> storageSize =
+      CheckedInt<size_t>(aLength) * sizeof(CompressedGlyph) + aSize;
+  void* storage = storageSize.isValid() ? malloc(storageSize.value()) : nullptr;
   if (!storage) {
     NS_WARNING("failed to allocate storage for text run!");
     return nullptr;
@@ -136,7 +140,7 @@ void* gfxTextRun::AllocateStorageForTextRun(size_t aSize, uint32_t aLength) {
 
   // Initialize the glyph storage (beyond aSize) to zero
   memset(reinterpret_cast<char*>(storage) + aSize, 0,
-         aLength * sizeof(CompressedGlyph));
+         storageSize.value() - aSize);
 
   return storage;
 }
@@ -412,6 +416,36 @@ bool gfxTextRun::ShrinkToLigatureBoundaries(Range* aRange) const {
   return adjusted;
 }
 
+// Converts aText to UTF-8 in aUTF8, which must be empty, and fills aCharToByte
+// with the byte offset in aUTF8 of the source text for each UTF-16 code unit in
+// aText, followed by the length of aUTF8. The low half of a surrogate pair
+// shares the offset of the high half. Returns false if the conversion fails.
+static bool ConvertSourceTextToUTF8(const nsAString& aText, nsACString& aUTF8,
+                                    nsTArray<uint32_t>& aCharToByte) {
+  MOZ_ASSERT(aUTF8.IsEmpty());
+  aCharToByte.SetCapacity(aText.Length() + 1);
+  // Convert one code point at a time so we know where each one starts.
+  for (uint32_t unit = 0; unit < aText.Length();) {
+    uint32_t unitCount = 1;
+    if (unit + 1 < aText.Length() &&
+        IsSurrogatePair(aText[unit], aText[unit + 1])) {
+      unitCount = 2;
+    }
+    aCharToByte.AppendElement(aUTF8.Length());
+    if (unitCount == 2) {
+      // The low surrogate shares the offset of the high surrogate.
+      aCharToByte.AppendElement(aUTF8.Length());
+    }
+    if (!AppendUTF16toUTF8(Span<const char16_t>(aText).Subspan(unit, unitCount),
+                           aUTF8, fallible)) {
+      return false;
+    }
+    unit += unitCount;
+  }
+  aCharToByte.AppendElement(aUTF8.Length());
+  return true;
+}
+
 void gfxTextRun::DrawGlyphs(gfxFont* aFont, Range aRange, gfx::Point* aPt,
                             const PropertyProvider* aProvider,
                             Range aSpacingRange, TextRunDrawParams& aParams,
@@ -421,6 +455,20 @@ void gfxTextRun::DrawGlyphs(gfxFont* aFont, Range aRange, gfx::Point* aPt,
   bool haveSpacing =
       GetAdjustedSpacingArray(aRange, aProvider, aSpacingRange, &spacingBuffer);
   aParams.spacing = haveSpacing ? spacingBuffer.Elements() : nullptr;
+  nsAutoString sourceText16;
+  nsAutoCString sourceText;
+  AutoTArray<uint32_t, 200> sourceCharToByte;
+  bool haveSourceText = aParams.needsSourceText && aProvider &&
+                        aProvider->GetSourceText(aRange, sourceText16);
+  if (haveSourceText) {
+    MOZ_ASSERT(sourceText16.Length() == aRange.Length());
+    haveSourceText =
+        sourceText16.Length() == aRange.Length() &&
+        ConvertSourceTextToUTF8(sourceText16, sourceText, sourceCharToByte);
+  }
+  aParams.sourceText = haveSourceText ? &sourceText : nullptr;
+  aParams.sourceCharToByte =
+      haveSourceText ? sourceCharToByte.Elements() : nullptr;
   aFont->Draw(this, aRange.start, aRange.end, aPt, aParams, aImgParams,
               aOrientation);
 }
@@ -624,6 +672,8 @@ void gfxTextRun::Draw(const Range aRange, const gfx::Point aPt,
   params.paintSVGGlyphs =
       !aParams.callbacks || aParams.callbacks->mShouldPaintSVGGlyphs;
   params.dt = aParams.context->GetDrawTarget();
+  params.needsSourceText =
+      aParams.provider && params.dt->SupportsGlyphSourceText();
   params.textDrawer = textDrawer;
   if (textDrawer) {
     params.clipRect = textDrawer->GeckoClipRect();

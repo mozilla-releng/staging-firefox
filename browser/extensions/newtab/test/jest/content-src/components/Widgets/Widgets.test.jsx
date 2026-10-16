@@ -75,6 +75,7 @@ const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
 const PREF_WIDGETS_STOCKS_ENABLED = "widgets.stocks.enabled";
 const PREF_WIDGETS_RECENT_SEARCHES_ENABLED = "widgets.recentSearches.enabled";
 const PREF_WIDGETS_HOROSCOPES_ENABLED = "widgets.horoscopes.enabled";
+const PREF_WIDGETS_TRAVEL_ENABLED = "widgets.travel.enabled";
 const PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED =
   "widgets.pictureOfTheDay.enabled";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
@@ -146,6 +147,19 @@ describe("<Widgets>", () => {
     const { container } = renderWidgets(state);
     expect(container.querySelector(".lists.widget")).toBeInTheDocument();
     expect(container.querySelector(".crossword")).not.toBeInTheDocument();
+  });
+
+  it("should render <Travel> under Nova when its prefs are enabled", () => {
+    const state = widgetsState({
+      "nova.enabled": true,
+      [PREF_WIDGETS_ENABLED]: true,
+      [PREF_WIDGETS_TRAVEL_ENABLED]: true,
+      "widgets.system.travel.enabled": true,
+    });
+    const { container } = renderWidgets(state);
+    expect(
+      container.querySelector("article.travel.widget")
+    ).toBeInTheDocument();
   });
 
   it("should render and show <FocusTimer> if timer prefs are enabled", () => {
@@ -260,7 +274,7 @@ describe("<Widgets> handleHideAllWidgets", () => {
   }
 
   function expectAllWidgetPrefsDisabled(calls) {
-    expect(calls).toHaveLength(9);
+    expect(calls).toHaveLength(10);
     for (const name of [
       PREF_WIDGETS_LISTS_ENABLED,
       PREF_WIDGETS_TIMER_ENABLED,
@@ -271,6 +285,7 @@ describe("<Widgets> handleHideAllWidgets", () => {
       PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED,
       PREF_WIDGETS_RECENT_SEARCHES_ENABLED,
       PREF_WIDGETS_HOROSCOPES_ENABLED,
+      PREF_WIDGETS_TRAVEL_ENABLED,
     ]) {
       const call = calls.find(action => action.data?.name === name);
       expect(call).toBeDefined();

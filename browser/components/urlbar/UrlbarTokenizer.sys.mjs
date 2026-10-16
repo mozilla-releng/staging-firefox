@@ -9,24 +9,18 @@
  */
 
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 /**
  * @import { SearchMode } from "chrome://browser/content/urlbar/UrlbarInputBase.mjs"
  */
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
-});
-
-ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  UrlbarShared.getLogger({ prefix: "Tokenizer" })
-);
-
-ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {
-  return new Localization(["browser/browser.ftl"]);
+  logger: () => UrlbarShared.getLogger({ prefix: "Tokenizer" }),
+  gFluentStrings: () => new Localization(["browser/browser.ftl"]),
 });
 
 /**

@@ -1213,6 +1213,19 @@ struct GlyphBuffer {
   const Glyph*
       mGlyphs;  //!< A pointer to a buffer of glyphs. Managed by the caller.
   uint32_t mNumGlyphs;  //!< Number of glyphs mGlyphs points to.
+
+  // The following fields optionally associate each glyph with the source text
+  // it was shaped from, so that backends which support it (e.g. SkPDF) can
+  // produce a correct ToUnicode/ActualText mapping even for glyphs reached via
+  // OpenType substitution (ligatures, math styling, etc). mText and mClusters
+  // are either both set or both null.
+  const char* mText = nullptr;  //!< UTF-8 source text; not null terminated.
+  uint32_t mTextLength = 0;     //!< Number of bytes in mText.
+  // mNumGlyphs monotonically non-decreasing byte offsets into mText, each less
+  // than mTextLength, specifying where the source text for each glyph starts.
+  // Each glyph's source text extends up to the next glyph's offset, or to the
+  // end of mText for the last glyph.
+  const uint32_t* mClusters = nullptr;
 };
 
 #ifdef MOZ_ENABLE_FREETYPE
@@ -1524,6 +1537,16 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
    * a11y::PdfStructTreeBuilder::SpecialId.
    */
   virtual void AccessibleId(uint64_t aInnerWindowId, uint64_t aAccId) {}
+
+  /**
+   * Returns true if this DrawTarget can make use of the source text/cluster
+   * fields on GlyphBuffer (see above) to produce a correct PDF ToUnicode/
+   * ActualText mapping for glyphs reached via OpenType substitution. Only
+   * targets which might produce PDF output return true. Callers that could
+   * supply this data (at some cost) should check this first so that consumers
+   * with no use for it, e.g. canvas or WebRender, aren't made to pay for it.
+   */
+  virtual bool SupportsGlyphSourceText() const { return false; }
 
   /**
    * Returns a SourceSurface which is a snapshot of the current contents of the
@@ -2404,8 +2427,12 @@ class GFX2D_API Factory {
   static SubpixelOrder mSubpixelOrder;
 
  public:
+  /**
+   * aSupportsGlyphSourceText should be true if aCanvas can make use of glyph
+   * source text. See DrawTarget::SupportsGlyphSourceText().
+   */
   static already_AddRefed<DrawTarget> CreateDrawTargetWithSkCanvas(
-      SkCanvas* aCanvas);
+      SkCanvas* aCanvas, bool aSupportsGlyphSourceText = false);
 
 #ifdef MOZ_ENABLE_FREETYPE
   static void SetFTLibrary(FT_Library aFTLibrary);

@@ -336,6 +336,11 @@ function lockOSKeyStore() {
   OSKeyStore._isLocked = true;
 }
 
+const blockedEvents = () =>
+  (Glean.formautofillCreditcards.migrateToRustBlocked.testGetValue() ?? []).map(
+    event => event.extra
+  );
+
 // Windows reads its key store without UI, so nothing waits for it there.
 const KEY_STORE_WAITS = AppConstants.platform != "win";
 
@@ -425,6 +430,14 @@ add_task(
       (Glean.formautofillCreditcards.migrateToRust.testGetValue() ?? []).length,
       0,
       "nothing is measured while the key store is locked"
+    );
+    Assert.deepEqual(
+      blockedEvents(),
+      [
+        { reason: "keystore_locked", dry_run: "false" },
+        { reason: "keystore_locked", dry_run: "true" },
+      ],
+      "but each copy held back is reported"
     );
 
     Assert.deepEqual(
@@ -580,6 +593,7 @@ add_task(async function test_a_primary_password_keeps_the_profile_on_json() {
   // The Rust store's key is NSS's, which the password guards, so the pref is
   // not acted on, with the token unlocked or locked, and nothing is asked.
   await token.changePassword("", PRIMARY_PASSWORD);
+  Services.fog.testResetFOG();
   const dialogs = watchDialogs();
   try {
     for (const locked of [false, true]) {
@@ -598,6 +612,14 @@ add_task(async function test_a_primary_password_keeps_the_profile_on_json() {
       "and its card still fills"
     );
     Assert.equal(dialogs.count, 0, "without the user being asked anything");
+    Assert.deepEqual(
+      blockedEvents(),
+      [
+        { reason: "primary_password", dry_run: "false" },
+        { reason: "primary_password", dry_run: "false" },
+      ],
+      "and each copy held back is reported"
+    );
   } finally {
     dialogs.stop();
     await token.changePassword(PRIMARY_PASSWORD, "");

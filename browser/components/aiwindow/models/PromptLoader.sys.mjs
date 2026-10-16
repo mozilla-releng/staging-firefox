@@ -24,6 +24,7 @@ import {
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import { Conversation } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs";
+import { SmartWindowLocation } from "moz-src:///browser/components/aiwindow/models/SmartWindowLocation.sys.mjs";
 
 /**
  * @typedef {import("moz-src:///browser/components/aiwindow/models/Utils.sys.mjs").InferenceParams} InferenceParams
@@ -254,10 +255,24 @@ export async function buildChatSystemPrompt(model) {
     )
     .join("\n");
 
+  // The location is read and fetched only when a module renders it.
+  let locationText = "Unavailable";
+  if (sections.some(section => section.includes("{location}"))) {
+    const location = SmartWindowLocation.getCachedLocation();
+    // Not awaited so that prompt assembly never waits on the network.
+    SmartWindowLocation.refreshIfStale();
+    if (location) {
+      locationText = [location.city, location.region, location.country]
+        .filter(Boolean)
+        .join(", ");
+    }
+  }
+
   const prompt = renderTemplate(sections.join("\n\n\n"), {
     skill_list: skillList,
     locale: Services.locale.appLocaleAsBCP47,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    location: locationText,
     isoTimestamp,
     todayDate: isoTimestamp.split("T")[0],
   });

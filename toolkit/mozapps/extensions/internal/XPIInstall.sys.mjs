@@ -4364,6 +4364,15 @@ export var XPIInstall = {
       );
     }
 
+    if (
+      XPIExports.XPIDatabase.mustSign(addon.type) &&
+      addon.signedState <= AddonManager.SIGNEDSTATE_MISSING
+    ) {
+      throw new Error(
+        `Refusing to install distribution add-on ${id} with signed state ${addon.signedState}`
+      );
+    }
+
     let state = location.get(id);
 
     if (state) {

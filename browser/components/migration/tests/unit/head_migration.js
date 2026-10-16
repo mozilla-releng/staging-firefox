@@ -158,6 +158,25 @@ function registerFakePath(key, file) {
   });
 }
 
+/**
+ * Copies a fixture directory into the test's temporary directory, so that
+ * tests can modify it without touching the test directory, which is shared
+ * with tests running in parallel.
+ *
+ * @param {string} relativePath
+ *   The path of the fixture directory, relative to the test directory.
+ *   For example: "Library/".
+ * @returns {Promise<nsIFile>}
+ *   The copy.
+ */
+async function copyFixtureDir(relativePath) {
+  let source = do_get_file(relativePath);
+  let target = do_get_tempdir();
+  target.append(source.leafName);
+  await IOUtils.copy(source.path, target.path, { recursive: true });
+  return target;
+}
+
 function getRootPath() {
   let dirKey;
   if (AppConstants.platform == "win") {

@@ -4489,16 +4489,21 @@ bool HttpBaseChannel::IsNavigation() {
   return LoadForceMainDocumentChannel() || (mLoadFlags & LOAD_DOCUMENT_URI);
 }
 
-nsresult HttpBaseChannel::GetAltDataBindingOrigin(nsACString& aOrigin) {
-  aOrigin.Truncate();
+nsIPrincipal* HttpBaseChannel::GetAltDataBindingPrincipal() {
   if (!mLoadInfo) {
-    return NS_ERROR_FAILURE;
+    return nullptr;
   }
 
-  nsCOMPtr<nsIPrincipal> principal = mLoadInfo->GetLoadingPrincipal();
+  nsIPrincipal* principal = mLoadInfo->GetLoadingPrincipal();
   if (!principal) {
     principal = mLoadInfo->TriggeringPrincipal();
   }
+  return principal;
+}
+
+nsresult HttpBaseChannel::GetAltDataBindingOrigin(nsACString& aOrigin) {
+  aOrigin.Truncate();
+  nsIPrincipal* principal = GetAltDataBindingPrincipal();
   if (!principal) {
     return NS_ERROR_FAILURE;
   }

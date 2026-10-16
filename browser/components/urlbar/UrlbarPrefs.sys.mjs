@@ -164,10 +164,6 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // configuration.
   ["exposureResults", ""],
 
-  // When we send events to (privileged) extensions (urlbar API), we wait this
-  // amount of time in milliseconds for them to respond before timing out.
-  ["extension.timeout", 400],
-
   // When we send events to extensions that use the omnibox API, we wait this
   // amount of time in milliseconds for them to respond before timing out.
   ["extension.omnibox.timeout", 3000],

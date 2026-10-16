@@ -73,6 +73,8 @@ tags = "vertical-tabs"
 
 ["browser_ctrlTab.js"]
 
+["browser_discardBrowser_discarded_attribute.js"]
+
 ["browser_discarded_tab_move.js"]
 
 ["browser_dont_process_switch_204.js"]

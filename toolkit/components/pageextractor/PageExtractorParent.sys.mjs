@@ -56,6 +56,20 @@ const SANDBOXED_STORAGE_ACCESS = 0x8000;
 // Blocks downloads initiated by the page.
 const SANDBOXED_DOWNLOADS = 0x10000;
 
+/** @type {Set<() => void>} */
+const headlessDeadlines = new Set();
+
+/** @param {string} location */
+function notifyHeadlessLocation(location) {
+  if (Cu.isInAutomation) {
+    Services.obs.notifyObservers(
+      null,
+      "page-extractor-headless-location",
+      location
+    );
+  }
+}
+
 /**
  * Whether a redirect landed on the requested site. A shared name is not
  * enough: the suffix list hands out github.io, so nytimes.github.io would
@@ -105,14 +119,16 @@ export class PageExtractorParent extends JSWindowActorParent {
    *   GetTextOptions field: starts its own trace when omitted.
    * @param {number} [refreshWithinMs] - A refresh only counts as a pending
    *   navigation when it fires within this many milliseconds.
+   * @param {number} [settleDelayMs] - Extra wait after the page is ready.
    * @returns {Promise<{hasPendingNavigation: boolean}>}
    */
-  async waitForPageReady(traceId, refreshWithinMs) {
+  async waitForPageReady(traceId, refreshWithinMs, settleDelayMs) {
     return this.#trace(lazy.Phase.waitForReady, { traceId }, async event => {
       try {
         return await this.sendQuery("PageExtractorParent:WaitForPageReady", {
           traceId: event.traceId,
           refreshWithinMs,
+          settleDelayMs,
         });
       } catch (error) {
         // The document was replaced or its browser torn down before it was
@@ -267,6 +283,15 @@ export class PageExtractorParent extends JSWindowActorParent {
     );
   }
 
+  static expireHeadlessLoadsForTesting() {
+    if (!Cu.isInAutomation) {
+      throw new Error("Only available in automation.");
+    }
+    for (const onDeadline of headlessDeadlines) {
+      onDeadline();
+    }
+  }
+
   /**
    * Get a Headless PageExtractor. It is available until the callback's returned
    * Promise is resolved. Then the headless browser is cleaned up.
@@ -286,9 +311,18 @@ export class PageExtractorParent extends JSWindowActorParent {
    *   to pass into a follow-up `actor.getText(options, traceId)` call so it
    *   correlates with this request.
    * @param {boolean} [options.anonymousFetch]
+   * @param {number} [options.settleDelayMs] - Extra wait once the page is ready.
+   * @param {AbortSignal} [options.signal] - Tears down the headless browser
+   *   when it aborts before the page is ready.
    * @returns {Promise<T>}
    */
-  static async getHeadlessExtractor({ urlString, callback, anonymousFetch }) {
+  static async getHeadlessExtractor({
+    urlString,
+    callback,
+    anonymousFetch,
+    settleDelayMs,
+    signal,
+  }) {
     const url = URL.parse(urlString);
     if (!url) {
       throw new Error("A valid URL must be provided.");
@@ -371,7 +405,8 @@ export class PageExtractorParent extends JSWindowActorParent {
                 SANDBOXED_DOWNLOADS;
             }
 
-            const timeoutMs = lazy.headlessTimeoutMs;
+            // Keep the settle wait from counting against the load timeout.
+            const timeoutMs = lazy.headlessTimeoutMs + (settleDelayMs ?? 0);
             const deadline = ChromeUtils.now() + timeoutMs;
             // Recorded so a failed read can report a block instead of a stall.
             let offSiteLocation = null;
@@ -421,6 +456,7 @@ export class PageExtractorParent extends JSWindowActorParent {
                     url.href
                   );
                   offSiteLocation = request.URI.spec;
+                  notifyHeadlessLocation(offSiteLocation);
                 }
               },
               /**
@@ -443,6 +479,7 @@ export class PageExtractorParent extends JSWindowActorParent {
                     url.href
                   );
                   offSiteLocation = location.spec;
+                  notifyHeadlessLocation(offSiteLocation);
                   // A chain may bounce through another site, the way a consent or
                   // single sign-on host hands the request back, so wait for the
                   // read to fail or time out rather than giving up here.
@@ -484,7 +521,11 @@ export class PageExtractorParent extends JSWindowActorParent {
                   !offSiteLocation &&
                   (hasPendingNavigation || wasReplaced(actor));
                 actor
-                  .waitForPageReady(traceId, deadline - ChromeUtils.now())
+                  .waitForPageReady(
+                    traceId,
+                    deadline - ChromeUtils.now(),
+                    settleDelayMs
+                  )
                   .then(
                     ({ hasPendingNavigation }) => {
                       if (!superseded(hasPendingNavigation)) {
@@ -501,6 +542,7 @@ export class PageExtractorParent extends JSWindowActorParent {
                       }
                     }
                   );
+                notifyHeadlessLocation(location.spec);
               },
             };
 
@@ -530,7 +572,7 @@ export class PageExtractorParent extends JSWindowActorParent {
 
             // The load may never commit on the requested host: the network can
             // stall, or bot detection can redirect to a challenge page elsewhere.
-            const timeoutId = lazy.setTimeout(() => {
+            const onDeadline = () => {
               if (offSiteLocation) {
                 navigateEvent.finish({
                   status: "error",
@@ -554,10 +596,27 @@ export class PageExtractorParent extends JSWindowActorParent {
                   "TimeoutError"
                 )
               );
-            }, timeoutMs);
+            };
+            const timeoutId = lazy.setTimeout(onDeadline, timeoutMs);
+            headlessDeadlines.add(onDeadline);
+
+            const onAbort = () => {
+              navigateEvent.finish({
+                status: "error",
+                errorName: "AbortError",
+              });
+              actorResolver.reject(new DOMException("Aborted", "AbortError"));
+            };
+            signal?.addEventListener("abort", onAbort, { once: true });
+            if (signal?.aborted) {
+              onAbort();
+            }
+            const ready = actorResolver.promise.finally(() =>
+              signal?.removeEventListener("abort", onAbort)
+            );
 
             try {
-              return await callback(await actorResolver.promise, traceId);
+              return await callback(await ready, traceId);
             } catch (error) {
               if (offSiteLocation && error?.name !== "BlockedError") {
                 throw new DOMException(
@@ -568,6 +627,7 @@ export class PageExtractorParent extends JSWindowActorParent {
               throw error;
             } finally {
               lazy.clearTimeout(timeoutId);
+              headlessDeadlines.delete(onDeadline);
               browser.removeProgressListener(progressListener, progressFlags);
             }
           },

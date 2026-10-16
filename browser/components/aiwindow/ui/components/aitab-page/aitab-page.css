@@ -31,7 +31,6 @@
   border-end-start-radius: var(--aitab-sheet-radius);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-end-end-radius: var(--aitab-sheet-radius);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--aitab-sheet-background-color);
   background-image: var(--aitab-sheet-background-image);
   background-origin: border-box;

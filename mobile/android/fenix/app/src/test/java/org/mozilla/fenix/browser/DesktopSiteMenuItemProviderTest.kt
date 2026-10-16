@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.browser
 
+import androidx.compose.ui.semantics.Role
 import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.assertEquals
@@ -19,6 +20,7 @@ import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItemBadge
+import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
@@ -74,11 +76,12 @@ class DesktopSiteMenuItemProviderTest {
 
             assertEquals(
                 StandardMenuItem(
-                    title = Text.Resource(R.string.browser_menu_desktop_site),
+                    title = MenuItemTitle(Text.Resource(R.string.browser_menu_desktop_site)),
                     icon = MenuItemIconRes(iconsR.drawable.mozac_ic_device_desktop_24),
                     onClickEvent = MenuAction.RequestDesktopSite,
                     badge = null,
                     state = MenuItemState.DISABLED,
+                    role = Role.Switch,
                 ),
                 provider.itemFlow.value,
             )
@@ -183,7 +186,7 @@ class DesktopSiteMenuItemProviderTest {
 
     private fun expectedItem(isDesktopMode: Boolean) =
         StandardMenuItem(
-            title = Text.Resource(R.string.browser_menu_desktop_site),
+            title = MenuItemTitle(Text.Resource(R.string.browser_menu_desktop_site)),
             icon = MenuItemIconRes(iconsR.drawable.mozac_ic_device_desktop_24),
             onClickEvent =
                 when (isDesktopMode) {
@@ -202,6 +205,7 @@ class DesktopSiteMenuItemProviderTest {
                     state = if (isDesktopMode) MenuItemState.ACTIVE else MenuItemState.DEFAULT,
                 ),
             state = if (isDesktopMode) MenuItemState.ACTIVE else MenuItemState.DEFAULT,
+            role = Role.Switch,
         )
 
     private companion object {

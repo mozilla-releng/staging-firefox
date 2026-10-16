@@ -73,8 +73,3 @@ def list_task_group_complete_tasks(task_group_id):
                 "status", {}
             ).get("taskId", "")
     return tasks
-
-
-def find_task(index_path):
-    index = get_taskcluster_client("index")
-    return index.findTask(index_path)

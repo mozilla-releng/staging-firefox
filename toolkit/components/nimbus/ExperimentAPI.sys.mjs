@@ -731,6 +731,34 @@ export const ExperimentAPI = new (class {
   }
 
   /**
+   * Perform a Nimbus update limited to the provided feature IDs, without
+   * waiting for the next scheduled update.
+   *
+   * NB: Please talk to the Nimbus team before adding new callers of this API.
+   *
+   * @param {string} trigger
+   * The name of the event that triggered the update.
+   *
+   * @param {string[]} featureIds
+   * Only recipes that include at least one of these features are evaluated.
+   *
+   * @returns {Promise<void>}
+   */
+  async updateRecipesForFeatures(trigger, featureIds) {
+    if (!featureIds?.length) {
+      throw new Error("featureIds required");
+    }
+    await this.init();
+    if (!this.studiesEnabled && !this.rolloutsEnabled) {
+      return;
+    }
+    await this._rsLoader.finishedUpdating();
+    await this._rsLoader.updateRecipes(trigger, {
+      onlyFeatureIds: new Set(featureIds),
+    });
+  }
+
+  /**
    * @typedef {object} FirstStartupTimestamps
    *
    * All properties are timestamps in milliseconds, as reported by

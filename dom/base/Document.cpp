@@ -11521,6 +11521,23 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
   CSSToScreenScale defaultScale =
       layoutDeviceScale * LayoutDeviceToScreenScale(1.0);
 
+  if (HasViewportSizeOverrideForMiniWindow()) {
+    // Lay out at exactly the overridden size, ignoring any meta viewport. Start
+    // unzoomed; chrome sets the zoom it wants.
+    //
+    // Use a much lower minimum, or a window narrower than the content at
+    // minimum zoom makes the MobileViewportManager stop scaling the zoom with
+    // the window.
+    CSSToScreenScale minZoom =
+        layoutDeviceScale * LayoutDeviceToScreenScale(0.01f);
+    CSSToScreenScale maxZoom = layoutDeviceScale * ViewportMaxScale();
+    return nsViewportInfo(
+        defaultScale, minZoom, maxZoom, mViewportSizeOverrideForMiniWindow,
+        nsViewportInfo::AutoSizeFlag::FixedSize,
+        nsViewportInfo::AutoScaleFlag::FixedScale,
+        nsViewportInfo::ZoomFlag::AllowZoom, ViewportFitType::Auto);
+  }
+
   auto* bc = GetBrowsingContext();
   const bool inRDM = bc && bc->InRDMPane();
   const bool ignoreMetaTag = [&] {
@@ -11902,6 +11919,24 @@ static InteractiveWidget ParseInteractiveWidget(
     return InteractiveWidget::OverlaysContent;
   }
   return InteractiveWidgetUtils::DefaultInteractiveWidgetMode();
+}
+
+void Document::SetViewportSizeOverrideForMiniWindow(float aWidth,
+                                                    float aHeight) {
+  MOZ_ASSERT(IsTopLevelContentDocument(),
+             "Restricted to top-level content documents");
+  CSSSize size(aWidth, aHeight);
+  if (size == mViewportSizeOverrideForMiniWindow) {
+    return;
+  }
+  mViewportSizeOverrideForMiniWindow = size;
+
+  // Switch to (or back from) a MobileViewportManager that sizes layout from
+  // GetViewportInfo.
+  if (RefPtr<PresShell> presShell = GetPresShell()) {
+    presShell->MaybeRecreateMobileViewportManager(
+        PresShell::MobileViewportManagerUpdate::LayoutViewportSizeMayChange);
+  }
 }
 
 void Document::SetMetaViewportData(UniquePtr<ViewportMetaData> aData) {

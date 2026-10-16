@@ -52,7 +52,7 @@ class APZCTreeManagerChild final : public IAPZCTreeManager,
 
   void NotifyApzAwareListenerAdded(const ScrollableLayerGuid& aGuid) override;
 
-  APZBridge* Bridge() override;
+  RefPtr<APZBridge> Bridge() override;
 
  protected:
   virtual ~APZCTreeManagerChild();

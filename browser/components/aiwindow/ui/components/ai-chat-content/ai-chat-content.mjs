@@ -68,6 +68,7 @@ const UI_UPDATE_TYPES = {
   CONFIRM_TAB_GROUP_SELECTION: "confirm-tab-group-selection",
   CONFIRM_OPEN_AND_GROUP_TABS_SELECTION:
     "confirm-open-and-group-tabs-selection",
+  TOGGLE_ALL_TAB_SELECTION: "toggle-all-tab-selection",
   UNDO_TAB_CLOSE: "undo-tab-close",
   UNDO_TAB_GROUP: "undo-tab-group",
   RETRY_PROMPT: "retry-prompt",
@@ -1480,6 +1481,15 @@ export class AIChatContent extends MozLitElement {
     });
   };
 
+  #handleConfirmationToggleAll = (event, messageId, toolCallId) => {
+    this.#dispatchToolUIUpdate({
+      messageId,
+      toolCallId,
+      updateType: UI_UPDATE_TYPES.TOGGLE_ALL_TAB_SELECTION,
+      updateData: event.detail,
+    });
+  };
+
   #handleMonitorSubmit = (event, messageId, toolCallId) => {
     // The display card reuses submit for edits; create only happens from the
     // "create" card.
@@ -1590,6 +1600,12 @@ export class AIChatContent extends MozLitElement {
             msg.messageId,
             toolUIData.toolCallId
           )}
+        @ai-website-confirmation:toggle-all=${event =>
+          this.#handleConfirmationToggleAll(
+            event,
+            msg.messageId,
+            toolUIData.toolCallId
+          )}
       ></ai-website-confirmation>
     `;
   }
@@ -1613,6 +1629,12 @@ export class AIChatContent extends MozLitElement {
           )}
         @ai-website-confirmation:close=${event =>
           this.#handleConfirmationClose(
+            event,
+            msg.messageId,
+            toolUIData.toolCallId
+          )}
+        @ai-website-confirmation:toggle-all=${event =>
+          this.#handleConfirmationToggleAll(
             event,
             msg.messageId,
             toolUIData.toolCallId

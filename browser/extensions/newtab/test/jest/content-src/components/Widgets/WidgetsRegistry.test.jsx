@@ -208,6 +208,7 @@ describe("getWidgetOrder", () => {
       "stocks",
       "recentSearches",
       "horoscopes",
+      "travel",
     ]);
   });
 
@@ -223,6 +224,7 @@ describe("getWidgetOrder", () => {
       "stocks",
       "recentSearches",
       "horoscopes",
+      "travel",
     ]);
   });
 
@@ -238,6 +240,7 @@ describe("getWidgetOrder", () => {
       "stocks",
       "recentSearches",
       "horoscopes",
+      "travel",
     ]);
   });
 
@@ -260,6 +263,7 @@ describe("getWidgetOrder", () => {
       "stocks",
       "recentSearches",
       "horoscopes",
+      "travel",
     ]);
     expect(result.length).toBe(registryIds.length);
   });
@@ -286,6 +290,7 @@ describe("resolveWidgetOrder", () => {
       "stocks",
       "recentSearches",
       "horoscopes",
+      "travel",
     ]);
   });
 
@@ -306,6 +311,7 @@ describe("resolveWidgetOrder", () => {
       "stocks",
       "recentSearches",
       "horoscopes",
+      "travel",
     ]);
   });
 
@@ -326,6 +332,7 @@ describe("resolveWidgetOrder", () => {
       "stocks",
       "recentSearches",
       "horoscopes",
+      "travel",
     ]);
   });
 });
@@ -484,6 +491,16 @@ describe("isWidgetAddable", () => {
       isWidgetAddable(horoscopes, {
         [horoscopes.systemEnabledPref]: false,
         trainhopConfig: { widgetHoroscopes: { visible: true } },
+      })
+    ).toBe(true);
+  });
+
+  it("is addable when revealed via the dedicated widgetTravel namespace", () => {
+    const travel = WIDGET_REGISTRY.find(w => w.id === "travel");
+    expect(
+      isWidgetAddable(travel, {
+        [travel.systemEnabledPref]: false,
+        trainhopConfig: { widgetTravel: { visible: true } },
       })
     ).toBe(true);
   });
@@ -1040,6 +1057,7 @@ describe("WIDGET_REGISTRY customize panel fields", () => {
     stocks: "WIDGET_STOCKS",
     recentSearches: "WIDGET_RECENT_SEARCHES",
     horoscopes: "WIDGET_HOROSCOPES",
+    travel: "WIDGET_TRAVEL",
   };
 
   it("gives every active entry a customizeL10nId", () => {

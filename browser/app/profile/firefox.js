@@ -733,10 +733,6 @@ pref("browser.urlbar.shortcuts.bookmarks", true);
 pref("browser.urlbar.shortcuts.tabs", true);
 pref("browser.urlbar.shortcuts.history", true);
 
-// When we send events to Urlbar extensions, we wait this amount of time in
-// milliseconds for them to respond before timing out.
-pref("browser.urlbar.extension.timeout", 400);
-
 // Controls when to DNS resolve single word search strings, after they were
 // searched for. If the string is resolved as a valid host, show a
 // "Did you mean to go to 'host'" prompt.
@@ -2455,6 +2451,7 @@ pref("browser.smartwindow.autoTabGrouping.preloadModels", true);
 pref("browser.smartwindow.autoTabGrouping.maxGroups", 3);
 pref("browser.smartwindow.autoTabGrouping.minTabsPerGroup", 2);
 pref("browser.smartwindow.autoTabGrouping.minCandidateTabs", 2);
+pref("browser.smartwindow.autoTabGrouping.maxCandidateTabs", 200);
 pref("browser.smartwindow.autoTabGrouping.minCohesion", "0.15");
 pref("browser.smartwindow.autoTabGrouping.timeoutMs", 8000);
 pref("browser.smartwindow.autoTabGrouping.supportedLocales", "en,fr");
@@ -2500,6 +2497,12 @@ pref("browser.smartwindow.searchTheWebFast", true);
 // written answer and its citations in one call. Takes precedence over
 // browser.smartwindow.searchTheWebFast.
 pref("browser.smartwindow.searchTheWebAnswers", false);
+
+// Smart Window: approximate location (city, region, country) from Merino
+// geolocation, cached in prefs.
+pref("browser.smartwindow.location.enabled", false);
+pref("browser.smartwindow.location.data", "");
+pref("browser.smartwindow.location.lastCheckSeconds", 0);
 
 // Smart Window Logging
 pref("browser.smartwindow.aiTabHistory.logLevel", "Error");

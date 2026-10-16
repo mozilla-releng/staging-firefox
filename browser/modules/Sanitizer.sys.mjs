@@ -114,7 +114,7 @@ export var Sanitizer = {
    *
    * @param parentWindow the browser window to use as parent for the created
    *        dialog.
-   * @param {string} mode - flag to let the dialog know if it is opened
+   * @param {string} [mode] - flag to let the dialog know if it is opened
    *        using the clear on shutdown (clearOnShutdown) settings option
    *        in about:preferences or in a clear site data context (clearSiteData)
    * @returns {"accept" | "cancel"} - The selected dialog box option.

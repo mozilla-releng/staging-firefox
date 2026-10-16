@@ -2498,12 +2498,24 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
   const mozilla::gfx::StrokeOptions* strokeOpts = nullptr;
   const mozilla::gfx::DrawOptions* drawOpts = nullptr;
   nsAtom* fontPalette = nullptr;
+  // The source text for the range passed to gfxFont::Draw, as provided by
+  // gfxTextRun::PropertyProvider::GetSourceText, but converted to UTF-8.
+  // Only set if needsSourceText is true and the provider returned the text.
+  const nsACString* sourceText = nullptr;
+  // The byte offset in sourceText For each textrun character in that range. The
+  // final element should be the length of sourceText. This must only be set if
+  // sourceText is also set.
+  const uint32_t* sourceCharToByte = nullptr;
   DrawMode drawMode = DrawMode::GLYPH_FILL;
   bool isVerticalRun = false;
   bool isRTL = false;
   bool paintSVGGlyphs = true;
   bool allowGDI = true;
   bool hasTextShadow = false;
+  // Whether the target of this draw might want per-glyph source text for
+  // ToUnicode/ActualText purposes. See gfx::GlyphBuffer and
+  // DrawTarget::SupportsGlyphSourceText.
+  bool needsSourceText = false;
 };
 
 struct MOZ_STACK_CLASS FontDrawParams {

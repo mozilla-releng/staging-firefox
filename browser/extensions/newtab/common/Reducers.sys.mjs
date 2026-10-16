@@ -307,6 +307,10 @@ export const INITIAL_STATE = {
      */
     engineName: "",
   },
+  Travel: {
+    initialized: false,
+    results: [],
+  },
 };
 
 function App(prevState = INITIAL_STATE.App, action) {
@@ -1291,6 +1295,19 @@ function RecentSearches(prevState = INITIAL_STATE.RecentSearches, action) {
   }
 }
 
+function Travel(prevState = INITIAL_STATE.Travel, action) {
+  switch (action.type) {
+    case at.WIDGETS_TRAVEL_UPDATE:
+      return {
+        ...prevState,
+        ...action.data,
+        initialized: true,
+      };
+    default:
+      return prevState;
+  }
+}
+
 function Ads(prevState = INITIAL_STATE.Ads, action) {
   switch (action.type) {
     case at.ADS_INIT:
@@ -1484,4 +1501,5 @@ export const reducers = {
   PrivacyWidget,
   PictureOfTheDay,
   RecentSearches,
+  Travel,
 };

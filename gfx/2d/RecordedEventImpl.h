@@ -416,13 +416,18 @@ class RecordedDrawGlyphs : public RecordedEventDerived<Derived> {
  public:
   RecordedDrawGlyphs(RecordedEvent::EventType aType, ReferencePtr aScaledFont,
                      const Pattern& aPattern, const DrawOptions& aOptions,
-                     const Glyph* aGlyphs, uint32_t aNumGlyphs)
+                     const GlyphBuffer& aBuffer)
       : RecordedEventDerived<Derived>(aType),
         mScaledFont(aScaledFont),
         mPattern(),
         mOptions(aOptions) {
     this->StorePattern(mPattern, aPattern);
-    mGlyphs.Assign(aGlyphs, aNumGlyphs);
+    mGlyphs.Assign(aBuffer.mGlyphs, aBuffer.mNumGlyphs);
+    // Only copied if both are present; see gfx::GlyphBuffer.
+    if (aBuffer.mText && aBuffer.mClusters && aBuffer.mNumGlyphs) {
+      mText.Assign(aBuffer.mText, aBuffer.mTextLength);
+      mClusters.Assign(aBuffer.mClusters, aBuffer.mNumGlyphs);
+    }
   }
 
   bool PlayEvent(Translator* aTranslator) const override;
@@ -445,15 +450,18 @@ class RecordedDrawGlyphs : public RecordedEventDerived<Derived> {
   PatternStorage mPattern;
   DrawOptions mOptions;
   RecordedEventArray<Glyph, uint32_t> mGlyphs;
+  // The source text and clusters for mGlyphs; see gfx::GlyphBuffer. Either both
+  // are empty, or mClusters has one entry per glyph in mGlyphs.
+  RecordedEventArray<char, uint32_t> mText;
+  RecordedEventArray<uint32_t, uint32_t> mClusters;
 };
 
 class RecordedFillGlyphs : public RecordedDrawGlyphs<RecordedFillGlyphs> {
  public:
   RecordedFillGlyphs(ReferencePtr aScaledFont, const Pattern& aPattern,
-                     const DrawOptions& aOptions, const Glyph* aGlyphs,
-                     uint32_t aNumGlyphs)
-      : RecordedDrawGlyphs(FILLGLYPHS, aScaledFont, aPattern, aOptions, aGlyphs,
-                           aNumGlyphs) {}
+                     const DrawOptions& aOptions, const GlyphBuffer& aBuffer)
+      : RecordedDrawGlyphs(FILLGLYPHS, aScaledFont, aPattern, aOptions,
+                           aBuffer) {}
 
   std::string GetName() const override { return "FillGlyphs"; }
 
@@ -476,10 +484,9 @@ class RecordedStrokeGlyphs : public RecordedDrawGlyphs<RecordedStrokeGlyphs>,
  public:
   RecordedStrokeGlyphs(ReferencePtr aScaledFont, const Pattern& aPattern,
                        const StrokeOptions& aStrokeOptions,
-                       const DrawOptions& aOptions, const Glyph* aGlyphs,
-                       uint32_t aNumGlyphs)
+                       const DrawOptions& aOptions, const GlyphBuffer& aBuffer)
       : RecordedDrawGlyphs(STROKEGLYPHS, aScaledFont, aPattern, aOptions,
-                           aGlyphs, aNumGlyphs),
+                           aBuffer),
         mStrokeOptions(aStrokeOptions) {}
 
   std::string GetName() const override { return "StrokeGlyphs"; }
@@ -2806,6 +2813,11 @@ inline bool RecordedDrawGlyphs<T>::PlayEvent(Translator* aTranslator) const {
   GlyphBuffer buffer;
   buffer.mGlyphs = mGlyphs.data();
   buffer.mNumGlyphs = mGlyphs.size();
+  if (!mText.empty()) {
+    buffer.mText = mText.data();
+    buffer.mTextLength = mText.size();
+    buffer.mClusters = mClusters.data();
+  }
   DrawGlyphs(dt, scaledFont, buffer, *GenericPattern(mPattern, aTranslator));
   return true;
 }
@@ -2820,14 +2832,42 @@ RecordedDrawGlyphs<T>::RecordedDrawGlyphs(RecordedEvent::EventType aType,
   this->ReadPatternData(aStream, mPattern);
   uint32_t numGlyphs;
   ReadElement(aStream, numGlyphs);
-  if (!aStream.good() || numGlyphs <= 0) {
+  if (!aStream.good()) {
     return;
   }
 
-  if (!mGlyphs.Read(aStream, numGlyphs)) {
+  if (numGlyphs > 0 && !mGlyphs.Read(aStream, numGlyphs)) {
     gfxCriticalNote << "RecordedDrawGlyphs failed to allocate glyphs of size "
                     << numGlyphs;
     aStream.SetIsBad();
+    return;
+  }
+
+  uint32_t textLength;
+  ReadElement(aStream, textLength);
+  if (!aStream.good() || textLength == 0) {
+    return;
+  }
+  if (numGlyphs == 0) {
+    aStream.SetIsBad();
+    return;
+  }
+  if (!mText.Read(aStream, textLength) || !mClusters.Read(aStream, numGlyphs)) {
+    gfxCriticalNote
+        << "RecordedDrawGlyphs failed to allocate glyph source text of size "
+        << textLength;
+    aStream.SetIsBad();
+    return;
+  }
+  // The recording may come from a less privileged process, so validate the
+  // clusters (see gfx::GlyphBuffer) before they are used to index mText.
+  const uint32_t* clusters = mClusters.data();
+  for (uint32_t i = 0; i < numGlyphs; ++i) {
+    if (clusters[i] >= textLength || (i > 0 && clusters[i] < clusters[i - 1])) {
+      gfxCriticalNote << "RecordedDrawGlyphs has invalid glyph clusters";
+      aStream.SetIsBad();
+      return;
+    }
   }
 }
 
@@ -2839,6 +2879,11 @@ void RecordedDrawGlyphs<T>::Record(S& aStream) const {
   this->RecordPatternData(aStream, mPattern);
   WriteElement(aStream, mGlyphs.size());
   mGlyphs.Write(aStream);
+  WriteElement(aStream, mText.size());
+  if (mText.size()) {
+    mText.Write(aStream);
+    mClusters.Write(aStream);
+  }
 }
 
 template <class T>

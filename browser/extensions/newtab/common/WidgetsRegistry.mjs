@@ -174,6 +174,10 @@ export const PREF_WIDGETS_HOROSCOPES_ENABLED = "widgets.horoscopes.enabled";
 export const PREF_HOROSCOPES_SIZE = "widgets.horoscopes.size";
 export const PREF_WIDGETS_SYSTEM_HOROSCOPES_ENABLED =
   "widgets.system.horoscopes.enabled";
+export const PREF_WIDGETS_TRAVEL_ENABLED = "widgets.travel.enabled";
+export const PREF_TRAVEL_SIZE = "widgets.travel.size";
+export const PREF_WIDGETS_SYSTEM_TRAVEL_ENABLED =
+  "widgets.system.travel.enabled";
 
 /**
  * @typedef {object} WidgetRegistryEntry
@@ -398,6 +402,25 @@ export const WIDGET_REGISTRY = [
     widgetsSettingsVisibleKey: "horoscopesVisible",
     widgetsSettingsEnabledKey: "horoscopesEnabled",
     trainhopNamespace: "widgetHoroscopes",
+  },
+  {
+    id: "travel",
+    telemetryName: "travel",
+    customizeL10nId: "newtab-custom-widget-travel-toggle",
+    customizeEventSource: "WIDGET_TRAVEL",
+    order: 10,
+    enabledPref: PREF_WIDGETS_TRAVEL_ENABLED,
+    sizePref: PREF_TRAVEL_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_TRAVEL_ENABLED,
+    trainhopEnabledKey: "travelEnabled",
+    trainhopSizeKey: "travelSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "travelVisible",
+    widgetsSettingsEnabledKey: "travelEnabled",
+    trainhopNamespace: "widgetTravel",
   },
 ];
 

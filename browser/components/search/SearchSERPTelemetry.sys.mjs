@@ -1567,6 +1567,20 @@ class ContentHandler {
   }
 
   /**
+   * Gets the browser a channel is loading in. This avoids
+   * ChannelWrapper.browserElement since it caches the browser on the wrapper,
+   * which can outlive the browser.
+   *
+   * @param {nsIChannel} channel
+   * @returns {MozBrowser}
+   */
+  _getChannelBrowser(channel) {
+    return /** @type {MozBrowser} */ (
+      channel.loadInfo.browsingContext?.top.embedderElement
+    );
+  }
+
+  /**
    * Listener that observes network activity, so that we can determine if a link
    * from a search provider page was followed, and if then if that link was an
    * ad click or not.
@@ -1590,6 +1604,11 @@ class ContentHandler {
       return;
     }
 
+    // Resolve the browser now because a top level navigation can replace the
+    // browsing context before the dispatch below runs, after which the channel
+    // no longer leads to the browser.
+    let channelBrowser = this._getChannelBrowser(channel);
+
     Services.tm.dispatchToMainThread(() => {
       // We suspect that No Content (204) responses are used to transfer or
       // update beacons. They used to lead to double-counting ad-clicks, so let's
@@ -1604,10 +1623,6 @@ class ContentHandler {
       if (!originURL) {
         return;
       }
-
-      let channelBrowser = /** @type {MozBrowser} */ (
-        wrappedChannel.browserElement
-      );
 
       // Find the browser that is linked to SERP tracking item for this request.
       // The request may come from the SERP tab itself, or from a new tab/window
@@ -1678,7 +1693,8 @@ class ContentHandler {
             wrappedChannel,
             info,
             telemetryState,
-            isFromNewtab
+            isFromNewtab,
+            channelBrowser
           );
         } catch (ex) {
           lazy.logConsole.error(ex);
@@ -1737,12 +1753,15 @@ class ContentHandler {
    *   The telemetry state for the SERP browser that triggered the request.
    * @param {boolean} isFromNewtab
    *   Whether the request was triggered from a new tab.
+   * @param {MozBrowser} browser
+   *   The browser the channel is loading into.
    */
   #maybeRecordSERPTelemetry(
     wrappedChannel,
     info,
     telemetryState,
-    isFromNewtab
+    isFromNewtab,
+    browser
   ) {
     if (wrappedChannel._recordedClick) {
       lazy.logConsole.debug("Click already recorded.");
@@ -1787,8 +1806,6 @@ class ContentHandler {
       (wrappedChannel.channel.loadInfo.isTopLevelLoad ||
         info.nonAdsLinkRegexps.some(r => r.test(url)))
     ) {
-      let browser = /** @type {MozBrowser} */ (wrappedChannel.browserElement);
-
       // If the load is from history, don't record an event.
       if (
         browser?.browsingContext.webProgress?.loadType &

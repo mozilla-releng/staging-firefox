@@ -80,9 +80,9 @@ git = "https://github.com/mozilla/cubeb-pulse-rs"
 rev = "88194f91c8778fa608a19af7b91306094525595d"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/glean?tag=v70.0.0"]
+[source."git+https://github.com/mozilla/glean?tag=v70.2.0"]
 git = "https://github.com/mozilla/glean"
-tag = "v70.0.0"
+tag = "v70.2.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/happy-eyeballs?tag=v1.0.0"]
@@ -110,9 +110,9 @@ git = "https://github.com/mozilla/mp4parse-rust"
 rev = "f0c80783227a1fb46f34cb04e10607045eac4297"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/neqo?tag=v0.32.0"]
+[source."git+https://github.com/mozilla/neqo?tag=v0.33.0"]
 git = "https://github.com/mozilla/neqo"
-tag = "v0.32.0"
+tag = "v0.33.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/nss-rs"]

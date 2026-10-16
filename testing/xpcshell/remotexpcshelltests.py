@@ -349,7 +349,11 @@ class RemoteXPCShellTestThread(xpcshell.XPCShellTestThread):
         with mozfile.TemporaryDirectory() as dumpDir:
             self.device.pull(self.remoteMinidumpDir, dumpDir)
             crashed = mozcrash.log_crashes(
-                self.log, dumpDir, symbols_path, test=test_name
+                self.log,
+                dumpDir,
+                symbols_path,
+                test=test_name,
+                quiet=self.crashAsPass or self.retry,
             )
         return crashed
 

@@ -284,6 +284,7 @@ for (const type of [
   "WIDGETS_TIMER_SET_TYPE",
   "WIDGETS_TIMER_USER_EVENT",
   "WIDGETS_TIMER_USER_IMPRESSION",
+  "WIDGETS_TRAVEL_UPDATE",
   "WIDGETS_USER_EVENT",
 ]) {
   actionTypes[type] = type;

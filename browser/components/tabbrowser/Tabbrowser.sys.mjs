@@ -3537,10 +3537,13 @@ export class Tabbrowser {
     await lazy.TabStateFlusher.flush(browser);
   }
 
-  discardBrowser(aTab, aForceDiscard) {
+  discardBrowser(
+    aTab,
+    { forceDiscard = false, renderDiscarded = forceDiscard } = {}
+  ) {
     let browser = aTab.linkedBrowser;
 
-    if (!this.#mayDiscardBrowser(aTab, aForceDiscard)) {
+    if (!this.#mayDiscardBrowser(aTab, forceDiscard)) {
       return false;
     }
 
@@ -3565,7 +3568,7 @@ export class Tabbrowser {
     // Indicate that this tab was explicitly unloaded (i.e. not
     // from a session restore) in case we want to style that
     // differently.
-    if (aForceDiscard) {
+    if (renderDiscarded) {
       aTab.toggleAttribute("discarded", true);
     }
 
@@ -7167,7 +7170,9 @@ export class Tabbrowser {
     await Promise.all(tabs.map(tab => this.prepareDiscardBrowser(tab)));
 
     for (let tab of tabs) {
-      numberOfTabsUnloaded += this.discardBrowser(tab, true) ? 1 : 0;
+      numberOfTabsUnloaded += this.discardBrowser(tab, { forceDiscard: true })
+        ? 1
+        : 0;
     }
     let timeElapsed = Math.floor(
       this.documentGlobal.performance.now() - timeBeforeUnload

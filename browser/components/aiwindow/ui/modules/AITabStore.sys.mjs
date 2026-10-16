@@ -33,6 +33,16 @@ import {
 const MAX_SLUG_SUFFIX = 50;
 
 /**
+ * @param {Date} date
+ * @returns {string} The local calendar date as YYYY-MM-DD.
+ */
+function formatLocalDate(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/**
  * Simple interface to store and retrieve AITab UI specific data
  *
  * @augments {SQLiteStoreBase}
@@ -342,11 +352,9 @@ class AITabStore extends SQLiteStoreBase {
   /**
    * A slug no tab holds yet, derived from `base`.
    *
-   * A slug comes from a page title, and titles repeat: two conversations that
-   * both generate "Hotels in Lisbon" ask for the same slug, and only one can
-   * have it. Suffixes are numbered rather than random so the URL a user sees
-   * stays readable, and the search runs inside the caller's transaction so
-   * two writers cannot both settle on the same free slug.
+   * Titles repeat. A taken slug gets today's date, then a counter:
+   * `base`, `base_YYYY-MM-DD`, `base_YYYY-MM-DD_1`, ...
+   * The check and the save happen together, so two pages saved at once can't get the same slug.
    *
    * Only called for a create, so `base` itself is available far more often
    * than not and the loop usually ends on its first pass.
@@ -355,8 +363,13 @@ class AITabStore extends SQLiteStoreBase {
    * @returns {Promise<string>}
    */
   async #mintSlug(base) {
+    const dated = `${base}_${formatLocalDate(new Date())}`;
+    const candidates = [base, dated];
     for (let suffix = 1; suffix <= MAX_SLUG_SUFFIX; suffix++) {
-      const candidate = suffix === 1 ? base : `${base}_${suffix}`;
+      candidates.push(`${dated}_${suffix}`);
+    }
+
+    for (const candidate of candidates) {
       const rows = await this.connection.execute(SLUG_EXISTS, {
         slug: candidate,
       });
@@ -367,7 +380,7 @@ class AITabStore extends SQLiteStoreBase {
 
     // Enough same-titled pages to exhaust the numbered suffixes. Readability
     // is already lost by this point, so take a slug that needs no search.
-    return `${base}_${crypto.randomUUID().slice(0, 8)}`;
+    return `${dated}_${crypto.randomUUID().slice(0, 8)}`;
   }
 
   async #ensureConnection() {

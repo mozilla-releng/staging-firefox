@@ -72,7 +72,7 @@ This kind performs a standalone bootstrap of a Firefox build from various system
 
 Hazard builds are similar to "regular' builds, but use a compiler extension to
 extract a bunch of data from the build and then analyze that data looking for
-hazardous behaviors. See <https://firefox-source-docs.mozilla.org/js/HazardAnalysis/index.html>
+hazardous behaviors. See {doc}`/js/HazardAnalysis/index`
 
 ## l10n
 
@@ -513,7 +513,7 @@ Sets up bouncer products for partners.
 
 ## release-early-tagging
 
-Utilises treescript to perform tagging that should happen near the start of a release.
+Utilises landoscript to perform tagging that should happen near the start of a release.
 
 ## release-eme-free-repack
 

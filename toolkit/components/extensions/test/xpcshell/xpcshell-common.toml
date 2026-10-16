@@ -436,9 +436,6 @@ run-if = [
 ]
 
 ["test_ext_l10n.js"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 
 ["test_ext_localStorage.js"]
 

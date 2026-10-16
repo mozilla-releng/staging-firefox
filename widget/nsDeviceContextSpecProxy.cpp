@@ -71,6 +71,7 @@ nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
   }
 
   mRecorder = new mozilla::layout::DrawEventRecorderPRFileDesc();
+  mRecorder->SetSupportsGlyphSourceText(true);
   nsresult rv = mRemotePrintJob->InitializePrint(
       nsString(aTitle), aWindowContext, aStartPage, aEndPage);
   if (NS_FAILED(rv)) {

@@ -74,7 +74,11 @@ export class PageExtractorChild extends JSWindowActorChild {
         return this.getText(options, traceId);
       }
       case "PageExtractorParent:WaitForPageReady":
-        return this.waitForPageReady(data?.traceId, data?.refreshWithinMs);
+        return this.waitForPageReady(
+          data?.traceId,
+          data?.refreshWithinMs,
+          data?.settleDelayMs
+        );
       case "PageExtractorParent:GetPageMetadata":
         return this.#getPageMetadata(data?.traceId);
     }
@@ -89,11 +93,12 @@ export class PageExtractorChild extends JSWindowActorChild {
    * @param {TraceId} [traceId]
    * @param {number} [refreshWithinMs] - A refresh only counts as a pending
    *   navigation when it fires within this many milliseconds.
+   * @param {number} [settleDelayMs] - Extra wait after the page is ready.
    * @returns {Promise<{hasPendingNavigation: boolean}>} hasPendingNavigation
    *   is true when the document is about to be replaced by a refresh or a
    *   load that has started but not yet committed.
    */
-  async waitForPageReady(traceId, refreshWithinMs = Infinity) {
+  async waitForPageReady(traceId, refreshWithinMs = Infinity, settleDelayMs) {
     const doc = this.document;
     const win = doc.documentGlobal;
     return this.#trace(lazy.Phase.waitForReady, { traceId }, async event => {
@@ -110,6 +115,11 @@ export class PageExtractorChild extends JSWindowActorChild {
           timeout: MAX_REQUEST_IDLE_CALLBACK_DELAY_MS,
         });
       });
+
+      if (settleDelayMs) {
+        // The page's timer queue runs this after its own timers of equal delay.
+        await new Promise(resolve => win.setTimeout(resolve, settleDelayMs));
+      }
 
       const wasHidden = doc.hidden;
       if (!wasHidden) {

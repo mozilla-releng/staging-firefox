@@ -7,8 +7,9 @@
 // 3. run `[path to]/firefox -xpcshell [path to]/getHSTSPreloadlist.js [absolute path to]/nsSTSPreloadlist.inc'
 //    To carry failure streaks forward, append the absolute path to the previous
 //    run's hsts-probe-results.json as an optional second argument.
-// Note: Running this file outputs a new nsSTSPreloadlist.inc and
-//       hsts-probe-results.json in the current working directory.
+// Note: Running this file outputs a new nsSTSPreloadlist.inc,
+//       hsts-probe-results.json and an hsts-profile directory in the current
+//       working directory.
 
 var gSSService = Cc["@mozilla.org/ssservice;1"].getService(
   Ci.nsISiteSecurityService
@@ -16,6 +17,9 @@ var gSSService = Cc["@mozilla.org/ssservice;1"].getService(
 
 const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
+);
+const { RemoteSecuritySettings } = ChromeUtils.importESModule(
+  "resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs"
 );
 
 const SOURCE =
@@ -63,6 +67,37 @@ async function download() {
     throw new Error(`ERROR: could not parse data from '${SOURCE}': ${e}`);
   }
   return data;
+}
+
+async function loadPreloadedIntermediates() {
+  let profileDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
+  profileDir.append("hsts-profile");
+  profileDir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o700);
+  Services.dirsvc.QueryInterface(Ci.nsIDirectoryService).registerProvider({
+    getFile(prop, persistent) {
+      persistent.value = true;
+      return ["ProfD", "ProfLD", "ProfDS", "ProfLDS"].includes(prop)
+        ? profileDir.clone()
+        : null;
+    },
+    QueryInterface: ChromeUtils.generateQI(["nsIDirectoryServiceProvider"]),
+  });
+  Services.obs.notifyObservers(null, "profile-do-change");
+
+  let { IntermediatePreloadsClient } = RemoteSecuritySettings.init();
+  Services.prefs.setIntPref(
+    "security.remote_settings.intermediates.downloads_per_poll",
+    1000000
+  );
+  try {
+    await IntermediatePreloadsClient.client.sync();
+    await IntermediatePreloadsClient.updatePreloadedIntermediates();
+    let records = await IntermediatePreloadsClient.client.db.list();
+    let imported = records.filter(r => r.cert_import_complete).length;
+    dump(`Loaded ${imported} of ${records.length} preloaded intermediates\n`);
+  } catch (e) {
+    dump(`WARNING: loading the preloaded intermediates failed: ${e}\n`);
+  }
 }
 
 function getHosts(rawdata) {
@@ -171,13 +206,13 @@ RedirectAndAuthStopper.prototype = {
   ]),
 };
 
-function fetchstatus(host) {
+function fetchstatus(host, method) {
   return new Promise(resolve => {
     let xhr = new XMLHttpRequest();
     let uri = "https://" + host.name + "/";
     host.startTime = Date.now();
 
-    xhr.open("head", uri, true);
+    xhr.open(method, uri, true);
     xhr.setRequestHeader("X-Automated-Tool", TOOL_SOURCE);
     xhr.timeout = REQUEST_TIMEOUT;
 
@@ -198,11 +233,20 @@ function fetchstatus(host) {
     xhr.ontimeout = errorHandler;
     xhr.onabort = errorHandler;
 
-    xhr.onload = () => {
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState != XMLHttpRequest.HEADERS_RECEIVED) {
+        return;
+      }
       let header = xhr.getResponseHeader("strict-transport-security");
-      resolve(
-        processStsHeader(host, header, xhr.status, xhr.channel.securityInfo)
+      let status = processStsHeader(
+        host,
+        header,
+        xhr.status,
+        xhr.channel.securityInfo
       );
+      xhr.onerror = xhr.ontimeout = xhr.onabort = null;
+      xhr.abort();
+      resolve(status);
     };
 
     xhr.channel.notificationCallbacks = new RedirectAndAuthStopper();
@@ -268,13 +312,13 @@ function spinResolve(promise) {
   }
 }
 
-async function probePool(hosts) {
+async function probePool(hosts, method = "HEAD") {
   let total = hosts.length;
   let results = [];
   let lastProgress = 0;
   let worker = async () => {
     while (hosts.length) {
-      results.push(await fetchstatus(hosts.pop()));
+      results.push(await fetchstatus(hosts.pop(), method));
       let progress = Math.floor((100 * results.length) / total);
       if (progress > lastProgress) {
         lastProgress = progress;
@@ -314,6 +358,26 @@ async function probeHSTSStatuses(hosts) {
     rescued.length + " of " + failed.length + " retried hosts were rescued.\n"
   );
 
+  let headerless = results.filter(
+    status => status.error == ERROR_NO_HSTS_HEADER && status.httpStatus != 429
+  );
+  dump("Probing " + headerless.length + " hosts without a header with GET.\n");
+  let viaGet = (
+    await probePool(
+      headerless.map(status => ({ name: status.name })),
+      "GET"
+    )
+  ).filter(
+    status =>
+      status.error != ERROR_NO_HSTS_HEADER &&
+      status.error != ERROR_CONNECTING_TO_HOST
+  );
+  let byName = new Map(headerless.map(status => [status.name, status]));
+  for (let status of viaGet) {
+    Object.assign(byName.get(status.name), status, { get: true });
+  }
+  dump(viaGet.length + " of them sent a header on GET.\n");
+
   dump("HSTS Probe received " + results.length + " statuses.\n");
   return results;
 }
@@ -323,8 +387,9 @@ function probeResult(status) {
     case ERROR_NONE:
       return "ok";
     case ERROR_NO_HSTS_HEADER:
-    case ERROR_MAX_AGE_TOO_LOW:
       return "no-header";
+    case ERROR_MAX_AGE_TOO_LOW:
+      return "max-age-too-low";
     case ERROR_CONNECTING_TO_HOST:
       return "connect-failed";
     default:
@@ -336,7 +401,7 @@ function isFailedRun(status) {
   let result = probeResult(status);
   return (
     result != "ok" &&
-    status.error != ERROR_MAX_AGE_TOO_LOW &&
+    result != "max-age-too-low" &&
     !(result == "no-header" && status.httpStatus < 400)
   );
 }
@@ -358,6 +423,9 @@ async function writeProbeResults(probedStatuses, previousPath) {
     let record = { result: probeResult(status), latencyMs: status.latencyMs };
     if (status.rescued) {
       record.rescued = true;
+    }
+    if (status.get) {
+      record.get = true;
     }
     if (status.httpStatus) {
       record.httpStatus = status.httpStatus;
@@ -551,6 +619,7 @@ async function main(args) {
     "network.stricttransportsecurity.preloadlist",
     false
   );
+  await loadPreloadedIntermediates();
   // download and parse the raw json file from the Chromium source
   let rawdata = await download();
   // get just the hosts with mode: "force-https"
@@ -616,4 +685,8 @@ async function main(args) {
 }
 
 // arguments is a global within xpcshell
-spinResolve(main(arguments));
+try {
+  spinResolve(main(arguments));
+} finally {
+  Services.obs.notifyObservers(null, "profile-before-change");
+}

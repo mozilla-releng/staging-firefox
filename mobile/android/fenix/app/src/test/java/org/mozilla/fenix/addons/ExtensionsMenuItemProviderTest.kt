@@ -31,6 +31,7 @@ import mozilla.components.compose.menu.data.MenuItem
 import mozilla.components.compose.menu.data.MenuItemActionButton
 import mozilla.components.compose.menu.data.MenuItemBadge
 import mozilla.components.compose.menu.data.MenuItemSummary
+import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconDrawable
 import mozilla.components.compose.menu.ui.MenuItemIconRes
@@ -69,14 +70,14 @@ class ExtensionsMenuItemProviderTest {
 
             val item = resolvedItem(browserStoreWith(extension(INSTALLED_ID))) as ExpandableMenuItem
 
-            assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title)
+            assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title.text)
             assertEquals(MenuItemSummary(text = Text.String(ACTION_TITLE)), item.summary)
             assertEquals(Text.String("1"), item.actionButtonText)
             assertEquals(2, item.subMenuItems.size)
             assertEquals(MenuAction.Navigate.ManageExtensions, item.subMenuItems.last().onClickEvent)
 
             val extensionItem = item.subMenuItems.first()
-            assertEquals(Text.String(ACTION_TITLE), extensionItem.title)
+            assertEquals(Text.String(ACTION_TITLE), extensionItem.title.text)
             assertEquals(MenuItemBadge(text = Text.String(BADGE_TEXT)), extensionItem.badge)
             assertEquals(
                 MenuAction.WebExtensionActionClicked(extensionId = INSTALLED_ID, isPageAction = false),
@@ -89,7 +90,7 @@ class ExtensionsMenuItemProviderTest {
         }
 
     @Test
-    fun `GIVEN no extensions are installed WHEN building the menu item THEN include recommended extensions`() =
+    fun `GIVEN no extensions are installed WHEN building the menu item THEN include recommended extensions and a way to discover more on the website`() =
         runTest {
             coEvery { addonManager.getAddons() } returns listOf(addon(RECOMMENDED_ID))
 
@@ -98,8 +99,10 @@ class ExtensionsMenuItemProviderTest {
             // Recommendations are not extensions the user has, so they are not counted.
             assertNull(item.actionButtonText)
             assertEquals(2, item.subMenuItems.size)
-            assertEquals(Text.String(RECOMMENDED_ID), item.subMenuItems.first().title)
+            // Long names are cut off rather than making the list longer.
+            assertEquals(MenuItemTitle(Text.String(RECOMMENDED_ID), maxLines = 1), item.subMenuItems.first().title)
             assertEquals(MenuAction.Navigate.DiscoverMoreExtensions, item.subMenuItems.last().onClickEvent)
+            assertEquals(iconsR.drawable.mozac_ic_external_link_24, item.subMenuItems.last().trailingIcon)
         }
 
     @Test
@@ -107,25 +110,15 @@ class ExtensionsMenuItemProviderTest {
         runTest {
             coEvery { addonManager.getAddons() } returns listOf(addon(INSTALLED_ID, installed = true, enabled = false))
 
-            assertEquals(
-                StandardMenuItem(
-                    title = Text.Resource(R.string.browser_menu_extensions),
-                    icon = MenuItemIconRes(iconsR.drawable.mozac_ic_extension_24),
-                    summary =
-                        MenuItemSummary(
-                            text = Text.Resource(R.string.browser_menu_no_extensions_installed_description)
-                        ),
-                    onClickEvent = MenuAction.Navigate.ManageExtensions,
-                    actionButton =
-                        MenuItemActionButton(
-                            icon = iconsR.drawable.mozac_ic_settings_24,
-                            contentDescription = Text.Resource(R.string.browser_menu_manage_extensions),
-                            onClickEvent = MenuAction.Navigate.ManageExtensions,
-                            showDivider = true,
-                        ),
-                ),
-                resolvedItem(),
-            )
+            assertEquals(nothingToShowItem, resolvedItem())
+        }
+
+    @Test
+    fun `GIVEN no extensions are installed and there are none to recommend WHEN building the menu item THEN say no extensions are enabled and allow managing them`() =
+        runTest {
+            coEvery { addonManager.getAddons() } returns emptyList()
+
+            assertEquals(nothingToShowItem, resolvedItem())
         }
 
     @Test
@@ -134,7 +127,7 @@ class ExtensionsMenuItemProviderTest {
 
         val item = resolvedItem(browserStore) as StandardMenuItem
 
-        assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title)
+        assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title.text)
         assertEquals(
             MenuItemSummary(
                 text = Text.Resource(R.string.browser_menu_extensions_disabled_description),
@@ -150,14 +143,12 @@ class ExtensionsMenuItemProviderTest {
     }
 
     @Test
-    fun `WHEN querying the extensions fails THEN still offer discovering some`() = runTest {
-        coEvery { addonManager.getAddons() } throws AddonManagerException(Exception("boom"))
+    fun `GIVEN no extensions are installed WHEN querying the extensions fails THEN say no extensions are enabled and allow managing them`() =
+        runTest {
+            coEvery { addonManager.getAddons() } throws AddonManagerException(Exception("boom"))
 
-        val item = resolvedItem() as ExpandableMenuItem
-
-        assertEquals(1, item.subMenuItems.size)
-        assertEquals(MenuAction.Navigate.DiscoverMoreExtensions, item.subMenuItems.single().onClickEvent)
-    }
+            assertEquals(nothingToShowItem, resolvedItem())
+        }
 
     @Test
     fun `GIVEN extensions offer something for the page WHEN opening the menu THEN list what they offer right away`() =
@@ -346,6 +337,22 @@ class ExtensionsMenuItemProviderTest {
 
     /** The menu item once everything known about the extensions was read and applied to it. */
     @OptIn(ExperimentalCoroutinesApi::class)
+    private val nothingToShowItem =
+        StandardMenuItem(
+            title = MenuItemTitle(Text.Resource(R.string.browser_menu_extensions)),
+            icon = MenuItemIconRes(iconsR.drawable.mozac_ic_extension_24),
+            summary = MenuItemSummary(text = Text.Resource(R.string.browser_menu_no_extensions_installed_description)),
+            onClickEvent = MenuAction.Navigate.ManageExtensions,
+            actionButton =
+                MenuItemActionButton(
+                    icon = iconsR.drawable.mozac_ic_settings_24,
+                    contentDescription = Text.Resource(R.string.browser_menu_manage_extensions),
+                    onClickEvent = MenuAction.Navigate.ManageExtensions,
+                    showDivider = true,
+                ),
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun TestScope.resolvedItem(
         browserStore: BrowserStore = browserStoreWith(),
         target: MenuTarget = MenuTarget.BrowserTab,
@@ -357,7 +364,6 @@ class ExtensionsMenuItemProviderTest {
         return provider.itemFlow.value
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `GIVEN the menu was opened from custom tab WHEN building the item THEN offer extensions without manage extensions or settings button`() =
         runTest {
@@ -373,7 +379,7 @@ class ExtensionsMenuItemProviderTest {
 
             val item = resolvedItem(browserStore, MenuTarget.CustomTab(TAB_ID)) as ExpandableMenuItem
 
-            assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title)
+            assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title.text)
             assertEquals(MenuItemSummary(text = Text.String(ACTION_TITLE)), item.summary)
             assertEquals(MenuItemState.DEFAULT, item.state)
             assertEquals(1, item.subMenuItems.size)
@@ -421,7 +427,7 @@ class ExtensionsMenuItemProviderTest {
 
             val item = resolvedItem(browserStore, MenuTarget.CustomTab(TAB_ID)) as StandardMenuItem
 
-            assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title)
+            assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title.text)
             assertEquals(
                 MenuItemSummary(
                     text = Text.Resource(R.string.browser_menu_extensions_disabled_description),
@@ -450,10 +456,7 @@ class ExtensionsMenuItemProviderTest {
             val item = resolvedItem(browserStore, MenuTarget.CustomTab(TAB_ID)) as ExpandableMenuItem
 
             assertEquals(1, item.subMenuItems.size)
-            assertEquals(
-                MenuAction.WebExtensionActionClicked(extensionId = INSTALLED_ID, isPageAction = false),
-                item.subMenuItems.first().onClickEvent,
-            )
+            assertEquals(Text.String(ACTION_TITLE), item.subMenuItems.first().title.text)
             assertTrue(
                 item.subMenuItems.none {
                     it.onClickEvent == MenuAction.Navigate.ManageExtensions ||
@@ -462,7 +465,26 @@ class ExtensionsMenuItemProviderTest {
             )
         }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `GIVEN the menu was opened from custom tab WHEN building the item THEN extensions' actions cannot be clicked`() =
+        runTest {
+            coEvery { addonManager.getAddons() } returns listOf(addon(INSTALLED_ID, installed = true, enabled = true))
+            val customTabState = createCustomTab(url = "https://mozilla.org", id = TAB_ID)
+            val browserStore =
+                BrowserStore(
+                    BrowserState(
+                        customTabs = listOf(customTabState),
+                        extensions = mapOf(INSTALLED_ID to extension(INSTALLED_ID)),
+                    )
+                )
+
+            val item = resolvedItem(browserStore, MenuTarget.CustomTab(TAB_ID)) as ExpandableMenuItem
+
+            assertNull(item.subMenuItems.single().onClickEvent)
+            // The item itself can still be expanded to see them.
+            assertEquals(MenuAction.OnExtensionsMenuClicked, item.onClickEvent)
+        }
+
     @Test
     fun `GIVEN the menu was opened from custom tab and no extensions apply WHEN building the item THEN show no extensions enabled and disable item`() =
         runTest {
@@ -477,7 +499,7 @@ class ExtensionsMenuItemProviderTest {
 
             val item = resolvedItem(browserStore, MenuTarget.CustomTab(TAB_ID)) as StandardMenuItem
 
-            assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title)
+            assertEquals(Text.Resource(R.string.browser_menu_extensions), item.title.text)
             assertEquals(
                 MenuItemSummary(
                     text = Text.Resource(R.string.browser_menu_no_extensions_installed_description),
@@ -497,7 +519,7 @@ class ExtensionsMenuItemProviderTest {
 
         assertEquals(
             StandardMenuItem(
-                title = Text.Resource(R.string.browser_menu_extensions),
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_extensions)),
                 icon = MenuItemIconRes(iconsR.drawable.mozac_ic_extension_24),
                 onClickEvent = MenuAction.Navigate.ManageExtensions,
             ),

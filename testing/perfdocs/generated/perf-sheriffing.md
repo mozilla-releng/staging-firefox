@@ -540,7 +540,7 @@ Depending on the developer's response, one of five things may happen:
 ### What is Perfherder?
 
 [Perfherder](https://treeherder.mozilla.org/perf.html#/graphs) is a tool that takes data points from log files and graphs them over time.
-Primarily this is used for performance data from [Talos](https://wiki.mozilla.org/TestEngineering/Performance/Talos), but also from [AWSY](https://firefox-source-docs.mozilla.org/testing/perfdocs/awsy.html), build_metrics, [Autophone](https://wiki.mozilla.org/EngineeringProductivity/Autophone) and platform_microbenchmarks.
+Primarily this is used for performance data from [Talos](https://wiki.mozilla.org/TestEngineering/Performance/Talos), but also from {doc}`AWSY </testing/perfdocs/awsy>`, build_metrics, [Autophone](https://wiki.mozilla.org/EngineeringProductivity/Autophone) and platform_microbenchmarks.
 All these are test harnesses and you can find more about them [here](https://wiki.mozilla.org/TestEngineering/Performance/Sheriffing/Alerts).
 
 The code for Perfherder can be found inside Treeherder [on GitHub](https://github.com/mozilla/treeherder/).
