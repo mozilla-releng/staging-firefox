@@ -23,6 +23,8 @@ skip-if = [
 
 ["test_restore_aiwindow.py"]
 
+["test_restore_counts.py"]
+
 ["test_restore_last_session_window_mismatch.py"]
 
 ["test_restore_loading_tab.py"]

@@ -238,9 +238,7 @@ export class AITabTable extends MozLitElement {
       />
       <section class="aitab-table">
         ${this.heading
-          ? html`<h2 id="heading" class="aitab-table-heading">
-              ${this.heading}
-            </h2>`
+          ? html`<h2 id="heading" class="aitab-heading-3">${this.heading}</h2>`
           : nothing}
         ${this.description
           ? html`<p class="aitab-table-description">${this.description}</p>`

@@ -69,8 +69,6 @@ class MOZ_RAII MOZ_SCOPED_CAPABILITY MOZ_CAPABILITY("dirty_tracking_autolock")
 
   bool IsValid() const;
 
-  void Touch() { mTouched = true; }
-
   RefPtr<OriginInfo> GetOriginInfo() const;
 
  private:
@@ -106,7 +104,6 @@ class MOZ_RAII MOZ_SCOPED_CAPABILITY MOZ_CAPABILITY("dirty_tracking_autolock")
 
   Mutex* mLock;
   mutable RefPtr<OriginInfo> mOriginInfo;
-  bool mTouched;
 };
 
 }  // namespace mozilla::dom::quota

@@ -267,10 +267,21 @@ export class IPPChannelFilter {
 
     const principal = this.#principalForChannel(channel);
     const rule = lazy.IPPSiteRuleManager.getRule(principal);
+    const isTopLevelDocument =
+      channel.loadInfo?.externalContentPolicyType ===
+      Ci.nsIContentPolicy.TYPE_DOCUMENT;
     if (rule === lazy.IPPPrincipalRules.INCLUDED) {
+      if (isTopLevelDocument) {
+        Glean.ipprotectionInclusions.ruleApplied.add(1);
+      }
       return true;
     }
     if (rule === lazy.IPPPrincipalRules.EXCLUDED) {
+      // Only the user's own exclusions count, not the built-in ones for
+      // local, non-http(s) and infrastructure traffic.
+      if (isTopLevelDocument && lazy.IPPSiteRuleManager.canManage(principal)) {
+        Glean.ipprotectionExclusions.ruleApplied.add(1);
+      }
       return false;
     }
     return this.#matchMode(channel);

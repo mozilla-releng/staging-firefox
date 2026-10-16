@@ -4489,16 +4489,21 @@ bool HttpBaseChannel::IsNavigation() {
   return LoadForceMainDocumentChannel() || (mLoadFlags & LOAD_DOCUMENT_URI);
 }
 
-nsresult HttpBaseChannel::GetAltDataBindingOrigin(nsACString& aOrigin) {
-  aOrigin.Truncate();
+nsIPrincipal* HttpBaseChannel::GetAltDataBindingPrincipal() {
   if (!mLoadInfo) {
-    return NS_ERROR_FAILURE;
+    return nullptr;
   }
 
-  nsCOMPtr<nsIPrincipal> principal = mLoadInfo->GetLoadingPrincipal();
+  nsIPrincipal* principal = mLoadInfo->GetLoadingPrincipal();
   if (!principal) {
     principal = mLoadInfo->TriggeringPrincipal();
   }
+  return principal;
+}
+
+nsresult HttpBaseChannel::GetAltDataBindingOrigin(nsACString& aOrigin) {
+  aOrigin.Truncate();
+  nsIPrincipal* principal = GetAltDataBindingPrincipal();
   if (!principal) {
     return NS_ERROR_FAILURE;
   }
@@ -6169,6 +6174,14 @@ IMPL_TIMING_ATTR(RedirectEnd)
 IMPL_TIMING_ATTR(TransactionPending)
 
 #undef IMPL_TIMING_ATTR
+
+void HttpBaseChannel::MaybeReportTimingDataForRedirect(
+    nsISupports* aNewChannel) {
+  nsCOMPtr<nsITimedChannel> newTimedChannel = do_QueryInterface(aNewChannel);
+  if (!newTimedChannel) {
+    MaybeReportTimingData();
+  }
+}
 
 void HttpBaseChannel::MaybeReportTimingData() {
   // There is no point in continuing, since the performance object in the parent

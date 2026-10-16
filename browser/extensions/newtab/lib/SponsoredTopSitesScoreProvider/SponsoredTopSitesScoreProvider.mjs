@@ -47,6 +47,9 @@ const HISTORY_SIZE = 30;
 const PREF_LAST_RELEASE_TIME =
   "browser.newtabpage.activity-stream.sponsoredTopSitesScoring.lastReleaseTime";
 
+// Places events that indicate browsing history was removed.
+const PLACES_EVENTS = ["history-cleared", "page-removed"];
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "LAST_RELEASE_TIME_PREF_VALUE",
@@ -59,6 +62,7 @@ export class _SponsoredTopSitesScoreProvider {
   _rs = null;
   _cache = null;
   _refreshPromise = null;
+  _placesListener = null;
 
   /**
    * Starts the scoring. This creates the cache and Remote Settings client.
@@ -74,6 +78,13 @@ export class _SponsoredTopSitesScoreProvider {
     if (!this._rs) {
       this._rs = lazy.RemoteSettings(REMOTE_SETTINGS_COLLECTION);
     }
+    if (!this._placesListener) {
+      this._placesListener = events => this._onPlacesEvent(events);
+      lazy.PlacesUtils.observers.addListener(
+        PLACES_EVENTS,
+        this._placesListener
+      );
+    }
   }
 
   /**
@@ -82,6 +93,13 @@ export class _SponsoredTopSitesScoreProvider {
    * Invoke this when scoring is disabled or the consumer is uninitializing.
    */
   uninit() {
+    if (this._placesListener) {
+      lazy.PlacesUtils.observers.removeListener(
+        PLACES_EVENTS,
+        this._placesListener
+      );
+      this._placesListener = null;
+    }
     this._rs = null;
     this._getFlags = null;
   }
@@ -115,7 +133,7 @@ export class _SponsoredTopSitesScoreProvider {
     await this._appendScoreHistory(todayDay, scoresWithDP);
     const scoreHistory = await this._getScoreHistory(todayDay);
     await this._setScores(this._postProcessScores(scoreHistory, config));
-    Services.prefs.setIntPref(PREF_LAST_RELEASE_TIME, now);
+    this._setLastReleaseTime(now);
   }
 
   /**
@@ -125,6 +143,15 @@ export class _SponsoredTopSitesScoreProvider {
    */
   _getLastReleaseTime() {
     return lazy.LAST_RELEASE_TIME_PREF_VALUE;
+  }
+
+  /**
+   * Record the time of the last release.
+   *
+   * @param {number} seconds The release time in seconds since the epoch.
+   */
+  _setLastReleaseTime(seconds) {
+    Services.prefs.setIntPref(PREF_LAST_RELEASE_TIME, seconds);
   }
 
   /**
@@ -224,6 +251,56 @@ export class _SponsoredTopSitesScoreProvider {
         });
     }
     return scores;
+  }
+
+  /**
+   * Clear the stored scores and score history, and restart the release
+   * interval so that no scores are released until a full interval has passed.
+   * Nothing is written when no scores have been stored or released.
+   *
+   * @returns {Promise<void>} Resolves once the data is cleared.
+   */
+  async clearData() {
+    if (!this._cache) {
+      return;
+    }
+    // Let a running refresh finish first so that it cannot write its scores
+    // back after they are cleared.
+    await this._refreshPromise;
+    const data = await this._cache.get();
+    const hasData =
+      Object.keys(data[SCORES_CACHE_KEY] ?? {}).length ||
+      data[HISTORY_CACHE_KEY]?.length;
+    if (!hasData && !this._getLastReleaseTime()) {
+      return;
+    }
+
+    this._setLastReleaseTime(Math.round(Date.now() / 1000));
+    await this._cache.set(SCORES_CACHE_KEY, {});
+    await this._cache.set(HISTORY_CACHE_KEY, []);
+  }
+
+  /**
+   * Clear the data when all history is cleared or the user removes any
+   * history. Removals from periodic history expiration are ignored since the
+   * user did not request them.
+   *
+   * @param {Array<PlacesHistoryCleared|PlacesVisitRemoved>} events The batched
+   *  Places events.
+   */
+  _onPlacesEvent(events) {
+    const historyRemoved = events.some(
+      event =>
+        event.type === "history-cleared" ||
+        (event.type === "page-removed" &&
+          /** @type {PlacesVisitRemoved} */ (event).reason ===
+            PlacesVisitRemoved.REASON_DELETED)
+    );
+    if (historyRemoved) {
+      this.clearData().catch(e =>
+        lazy.logConsole.error("Clearing data failed", e)
+      );
+    }
   }
 
   /**

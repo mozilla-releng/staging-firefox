@@ -80,7 +80,7 @@ ipprotection-feature-introduction-title-private-browsing = Maximize privacy with
 ipprotection-feature-introduction-link-text-private-browsing-2 = Use our new <a data-l10n-name="learn-more-vpn">built-in VPN</a> to hide your location and protect your data, even when you’re in a Private Window.
 ipprotection-feature-introduction-description-private-browsing = Browse with extra protection by hiding your location, even when you’re in a Private Window.
 # Alternate version of the feature discovery callout copy used after we've released site inclusions for the VPN. Users have the option to turn the VPN on for specific sites only
-ipprotection-feature-introduction-description-private-browsing-1 = Help hide your location for <a data-l10n-name="learn-more-vpn">extra privacy</a> as you browse. Set rules to turn on the VPN for extra privacy or location-based browsing, and off where you don’t.
+ipprotection-feature-introduction-description-private-browsing-2 = Help hide your location as you browse. Set rules to turn on VPN for <a data-l10n-name="learn-more-vpn">extra privacy</a> or location-based browsing, and off where you don’t.
 
 ## Callout shown when the user logs in to a captive portal network
 
@@ -90,6 +90,7 @@ ipprotection-feature-introduction-description-captive-portal = Browse with extra
 ## Callout shown to users who have expressed an interest in privacy and security
 
 ipprotection-feature-introduction-title-privacy = Add another layer of privacy
+ipprotection-feature-introduction-title-privacy-1 = Add another layer of privacy with built-in VPN
 ipprotection-feature-introduction-link-text-privacy-3 = Get <a data-l10n-name="learn-more-vpn">extra privacy</a> by choosing from multiple locations to hide where you browse.
 
 # Used for multiple discovery callouts after release of the site inclusions feature
@@ -137,7 +138,7 @@ ipprotection-android-promo-callout-primary-button = Got it
 # Here 'browse on' means continue browsing
 ipprotection-site-inclusions-callout-title-existing-users = Set built-in VPN rules, then browse on
 ipprotection-site-inclusions-callout-title-lapsed-users = Try built-in VPN, now site by site
-ipprotection-site-inclusions-callout-description = Turn it on when you want extra privacy or location-based browsing, and off where you don’t.
+ipprotection-site-inclusions-callout-description-1 = Turn on VPN when you want extra privacy or location-based browsing, and off where you don’t.
 ipprotection-site-inclusions-callout-primary-button = Set rules
 ipprotection-site-inclusions-callout-secondary-button-existing-users = Not now
 ipprotection-site-inclusions-callout-secondary-button-lapsed-users = Dismiss
@@ -171,6 +172,13 @@ site-rules-status-heading = Your rule
 site-rules-description-exclusion = VPN is off for this site
 # Used in the panel when a user navigates to a site where the VPN is on due to a site inclusion
 site-rules-description-inclusion = VPN is on for this site
+
+# Message shown in the panel the first time a user turns on the VPN, offering to always turn on VPN for the current website
+# Variables
+#   $website (string) - The host of the current website (e.g. "example.com")
+site-rules-inclusion-prompt =
+  .heading = Always turn on VPN for { $website }?
+  .message = Update your rules anytime in settings.
 
 ipprotection-settings-link =
   .label = Settings
@@ -305,11 +313,14 @@ ip-protection-description-1 =
   .description = Get extra privacy by hiding your location while browsing.
 ip-protection-learn-more = Learn more
 
-# Variables
-#   $maxUsage (number) - The maximum amount of data a user can use in a month (in GB)
 ip-protection-not-opted-in-4 =
   .heading = Try { -brand-short-name }’s built-in VPN
   .message = Browse with extra protection by hiding your location.
+# Variables
+#   $maxUsage (number) - The maximum amount of data a user can use in a month (in GB)
+ip-protection-not-opted-in-inclusions-enabled =
+  .heading = Ready to try it?
+  .message = Get { $maxUsage } GB free each month and choose which sites use VPN.
 ip-protection-not-opted-in-button = Get started
 
 # Variables:
@@ -328,9 +339,9 @@ ip-protection-site-rules-button-1 =
   .label = Manage VPN rules
   .description = Set rules for sites that need extra privacy or VPN turned off.
 
-ip-protection-site-rules-list-section =
+ip-protection-site-rules-list-section-1 =
   .label = Website rules
-  .description = Choose how VPN works for sites that need extra privacy or VPN turned off.
+  .description = Set rules to turn VPN on or off automatically.
 
 ip-protection-site-rules-add-button =
   .label = Set rule
@@ -414,6 +425,12 @@ ip-protection-delete-site-rule-confirm =
 ip-protection-delete-all-site-rules-message = Delete all website rules?
 ip-protection-delete-all-site-rules-confirm =
   .label = Delete all rules
+# Shown in place of the delete confirmation when deleting a rule fails.
+ip-protection-delete-site-rule-error = Couldn’t delete rule
+# Shown in place of the delete confirmation when deleting all rules fails.
+ip-protection-delete-all-site-rules-error = Couldn’t delete rules
+ip-protection-delete-site-rule-retry =
+  .label = Try again
 
 ## IP Protection Bandwidth
 

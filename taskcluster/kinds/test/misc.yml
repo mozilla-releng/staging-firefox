@@ -227,6 +227,10 @@ test-coverage:
         by-test-platform:
             .*-ccov.*: built-projects
             default: []
+    target:
+        by-test-platform:
+            android-em.*: geckoview-test_runner.apk
+            default: null
     tier: 2
     mozharness:
         script:

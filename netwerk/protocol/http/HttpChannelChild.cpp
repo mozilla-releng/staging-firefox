@@ -1894,6 +1894,7 @@ void HttpChannelChild::CleanupRedirectingChannel(nsresult rv) {
 
   if (NS_SUCCEEDED(rv)) {
     mLoadInfo->AppendRedirectHistoryEntry(this, false);
+    MaybeReportTimingDataForRedirect(mRedirectChannelChild);
   } else {
     NS_WARNING("CompleteRedirectSetup failed, HttpChannelChild already open?");
   }

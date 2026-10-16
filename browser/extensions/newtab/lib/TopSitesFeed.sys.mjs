@@ -787,20 +787,12 @@ export class ContileIntegration {
               }
 
               // ObliviousHTTP.ohttpRequest only accepts a key/value object, and not
-              // a Headers instance. We normalize any headers to a key/value object.
-              //
-              // We use instanceof here since isInstance isn't available for
-              // Headers, it seems.
-              // eslint-disable-next-line mozilla/use-isInstance
-              if (options.headers && options.headers instanceof Headers) {
-                options.headers = Object.fromEntries(options.headers);
-              }
-
+              // a Headers instance.
               fetchPromise = lazy.ObliviousHTTP.ohttpRequest(
                 ohttpRelayURL,
                 config,
                 fetchUrl,
-                options
+                { ...options, headers: Object.fromEntries(headers) }
               );
             } else {
               fetchPromise = this._topSitesFeed.fetch(fetchUrl, options);
@@ -1050,9 +1042,27 @@ export class TopSitesFeed {
     Services.prefs.addObserver(DEFAULT_SITES_EXPERIMENTS_PREF_BRANCH, this);
     lazy.NimbusFeatures.newtab.onUpdate(this._nimbusChangeListener);
     this.frecencyBoostProvider.init();
-    SponsoredTopSitesScoreProvider.init(
-      () => this.store.getState().Prefs.values.adsBackendConfig
-    );
+    this._updateSponsoredScoring();
+  }
+
+  /**
+   * Starts the sponsored top sites scoring when shortcuts and sponsored
+   * shortcuts are both shown, and otherwise stops it and clears its data.
+   */
+  _updateSponsoredScoring() {
+    const { values } = this.store.getState().Prefs;
+    if (values[SHOWN_ON_NEWTAB_PREF] && values[SHOW_SPONSORED_PREF]) {
+      // init() only initializes if initialization has not already occurred,
+      // so it is safe to call while the scoring is running.
+      SponsoredTopSitesScoreProvider.init(
+        () => this.store.getState().Prefs.values.adsBackendConfig
+      );
+    } else {
+      SponsoredTopSitesScoreProvider.clearData().catch(e =>
+        lazy.log.error(`Failed to clear sponsored scoring data: ${e}`)
+      );
+      SponsoredTopSitesScoreProvider.uninit();
+    }
   }
 
   uninit() {
@@ -1542,6 +1552,8 @@ export class TopSitesFeed {
   /**
    * This thin wrapper around global.fetch makes it easier for us to write
    * automated tests that simulate responses from this fetch.
+   *
+   * @param {Parameters<typeof fetch>} args
    */
   fetch(...args) {
     return fetch(...args);
@@ -1910,7 +1922,7 @@ export class TopSitesFeed {
         sampledSites = await this.ranker.rankTopSites(
           checkedAdult,
           prefValues,
-          isStartup
+          { isStartup }
         );
       } catch (error) {
         lazy.log.warn(`Smart shortcuts ranking failed: ${error.message}`);
@@ -2127,9 +2139,7 @@ export class TopSitesFeed {
       }
 
       const links = await this.getLinksWithDefaults(
-        {
-          isStartup: options.isStartup,
-        },
+        options.isStartup,
         refreshId
       );
       if (this._uninitialized || refreshId !== this._refreshGeneration) {
@@ -2372,8 +2382,12 @@ export class TopSitesFeed {
   /**
    * Pin a site at a specific position saving only the desired keys.
    *
-   * @param customScreenshotURL {string} User set URL of preview image for site
-   * @param label {string} User set string of custom site name
+   * @param {object} site
+   * @param {string} [site.customScreenshotURL] User set URL of preview image for site
+   * @param {string} [site.label] User set string of custom site name
+   * @param {string} site.url
+   * @param {boolean} [site.searchTopSite]
+   * @param {number} index
    */
   async _pinSiteAt({ customScreenshotURL, label, url, searchTopSite }, index) {
     if (this._groupedPinsEnabled) {
@@ -2811,7 +2825,13 @@ export class TopSitesFeed {
             if (!action.data.value) {
               this._contile._resetContileCache();
             }
+            if (action.data.name === SHOW_SPONSORED_PREF) {
+              this._updateSponsoredScoring();
+            }
 
+            break;
+          case SHOWN_ON_NEWTAB_PREF:
+            this._updateSponsoredScoring();
             break;
           case SEARCH_SHORTCUTS_EXPERIMENT:
             if (action.data.value) {

@@ -2,7 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use crate::status_update::send_status;
 use crate::transport::hid::HIDDevice;
+use crate::StatusUpdate;
 
 pub use crate::transport::platform::device::Device;
 
@@ -34,6 +36,8 @@ pub enum DeviceSelectorEvent {
     Timeout,
     DevicesAdded(Vec<DeviceID>),
     DeviceRemoved(DeviceID),
+    /// The device is not a CTAP authenticator, or it is not compatible with the request
+    /// (eg: CTAP2-only request with a CTAP1 authenticator).
     NotAToken(DeviceID),
     ImAToken((DeviceID, Sender<DeviceCommand>)),
     SelectedToken(DeviceID),
@@ -47,7 +51,7 @@ pub struct DeviceSelector {
 }
 
 impl DeviceSelector {
-    pub fn run() -> Self {
+    pub fn run(status: Sender<crate::StatusUpdate>) -> Self {
         let (selector_send, selector_rec) = channel();
         // let new_device_callback = Arc::new(new_device_cb);
         let runloop = RunLoop::new(move |alive| {
@@ -79,6 +83,9 @@ impl DeviceSelector {
                         break; // We are done here. The selected device continues without us.
                     }
                     DeviceSelectorEvent::DevicesAdded(ids) => {
+                        if ids.is_empty() && waiting_for_response.is_empty() && tokens.is_empty() {
+                            send_status(&status, StatusUpdate::NoDevicesFound);
+                        }
                         for id in ids {
                             debug!("Device added event: {:?}", id);
                             waiting_for_response.insert(id);
@@ -101,8 +108,14 @@ impl DeviceSelector {
                             tokens.retain(|dev_id, _| dev_id != id);
                             if tokens.is_empty() {
                                 blinking = false;
+                                if waiting_for_response.is_empty() {
+                                    send_status(&status, StatusUpdate::NoDevicesFound);
+                                }
                                 continue;
                             }
+                        }
+                        if waiting_for_response.is_empty() && tokens.is_empty() {
+                            send_status(&status, StatusUpdate::NoDevicesFound);
                         }
                         // We are already blinking, so no need to run the code below this match
                         // that figures out if we should blink or not. In fact, currently, we do
@@ -117,6 +130,9 @@ impl DeviceSelector {
                     DeviceSelectorEvent::NotAToken(ref id) => {
                         debug!("Device not a token event: {:?}", id);
                         waiting_for_response.remove(id);
+                        if waiting_for_response.is_empty() && tokens.is_empty() {
+                            send_status(&status, StatusUpdate::NoDevicesFound);
+                        }
                     }
                     DeviceSelectorEvent::ImAToken((id, tx)) => {
                         let _ = waiting_for_response.remove(&id);
@@ -186,11 +202,13 @@ pub mod tests {
     use crate::{
         consts::Capability,
         ctap2::commands::get_info::{AuthenticatorInfo, AuthenticatorOptions},
-        transport::FidoDevice,
+        errors::HIDError,
+        transport::{CtapVersionSupport, FidoDevice, FidoProtocol},
         u2ftypes::U2FDeviceInfo,
     };
+    use std::sync::mpsc::TryRecvError;
 
-    pub(crate) fn gen_info(id: String) -> U2FDeviceInfo {
+    pub(crate) fn gen_info(id: String, cap_flags: Capability) -> U2FDeviceInfo {
         U2FDeviceInfo {
             vendor_name: String::from("ExampleVendor").into_bytes(),
             device_name: id.into_bytes(),
@@ -198,20 +216,31 @@ pub mod tests {
             version_major: 3,
             version_minor: 2,
             version_build: 1,
-            cap_flags: Capability::WINK | Capability::CBOR | Capability::NMSG,
+            cap_flags,
         }
     }
 
     pub(crate) fn make_device_simple_u2f(dev: &mut Device) {
-        dev.set_device_info(gen_info(dev.id()));
+        dev.set_device_info(gen_info(dev.id(), Capability::WINK));
         dev.set_cid([1, 2, 3, 4]); // Need to set something other than broadcast
-        dev.downgrade_to_ctap1();
+        dev.downgrade_to_ctap1().expect("failed to downgrade");
         dev.create_channel();
+        assert!(dev.supports_ctap1());
+        assert!(!dev.supports_ctap2());
+        assert_eq!(FidoProtocol::CTAP1, dev.get_protocol());
     }
 
     pub(crate) fn make_device_with_pin(dev: &mut Device) {
-        dev.set_device_info(gen_info(dev.id()));
+        dev.set_device_info(gen_info(
+            dev.id(),
+            Capability::WINK | Capability::CBOR | Capability::NMSG,
+        ));
         dev.set_cid([1, 2, 3, 4]); // Need to set something other than broadcast
+        assert!(matches!(
+            dev.downgrade_to_ctap1()
+                .expect_err("downgrading to CTAP1 should fail when NMSG"),
+            HIDError::UnexpectedVersion
+        ));
         dev.create_channel();
         let info = AuthenticatorInfo {
             options: AuthenticatorOptions {
@@ -221,6 +250,9 @@ pub mod tests {
             ..Default::default()
         };
         dev.set_authenticator_info(info);
+        assert!(!dev.supports_ctap1());
+        assert!(dev.supports_ctap2());
+        assert_eq!(FidoProtocol::CTAP2, dev.get_protocol());
     }
 
     fn send_i_am_token(dev: &Device, selector: &DeviceSelector) {
@@ -272,9 +304,10 @@ pub mod tests {
             Device::new("device selector 4").unwrap(),
         ];
 
+        let (tx, rx) = channel();
         // Make those actual tokens. The rest is interpreted as non-u2f-devices
         make_device_with_pin(&mut devices[2]);
-        let selector = DeviceSelector::run();
+        let selector = DeviceSelector::run(tx);
 
         // Adding all
         add_devices(devices.iter(), &selector);
@@ -283,6 +316,7 @@ pub mod tests {
                 send_no_token(d, &selector);
             }
         });
+        assert!(matches!(rx.try_recv(), Err(TryRecvError::Empty)));
 
         send_i_am_token(&devices[2], &selector);
 
@@ -297,18 +331,24 @@ pub mod tests {
     fn test_device_selector_stop() {
         let device = Device::new("device selector 1").unwrap();
 
-        let mut selector = DeviceSelector::run();
+        let (tx, rx) = channel();
+        let mut selector = DeviceSelector::run(tx);
 
         // Adding all
         selector
             .clone_sender()
             .send(DeviceSelectorEvent::DevicesAdded(vec![device.id()]))
             .unwrap();
+        assert!(matches!(rx.try_recv(), Err(TryRecvError::Empty)));
 
         selector
             .clone_sender()
             .send(DeviceSelectorEvent::NotAToken(device.id()))
             .unwrap();
+        assert!(matches!(
+            rx.recv_timeout(Duration::from_millis(500)),
+            Ok(StatusUpdate::NoDevicesFound)
+        ));
         selector.stop();
     }
 
@@ -328,7 +368,8 @@ pub mod tests {
         make_device_with_pin(&mut devices[4]);
         make_device_with_pin(&mut devices[5]);
 
-        let selector = DeviceSelector::run();
+        let (tx, rx) = channel();
+        let selector = DeviceSelector::run(tx);
 
         // Adding all, except the last one (we simulate that this one is not yet plugged in)
         add_devices(devices.iter().take(5), &selector);
@@ -360,6 +401,7 @@ pub mod tests {
             devices[5].receiver.as_ref().unwrap().recv().unwrap(),
             DeviceCommand::Blink
         );
+        assert!(matches!(rx.try_recv(), Err(TryRecvError::Empty)));
     }
 
     #[test]
@@ -380,7 +422,8 @@ pub mod tests {
         make_device_simple_u2f(&mut devices[4]);
         make_device_simple_u2f(&mut devices[5]);
 
-        let selector = DeviceSelector::run();
+        let (tx, rx) = channel();
+        let selector = DeviceSelector::run(tx);
 
         // Adding all, except the last one (we simulate that this one is not yet plugged in)
         add_devices(devices.iter().take(5), &selector);
@@ -422,6 +465,7 @@ pub mod tests {
             devices[6].receiver.as_ref().unwrap().recv().unwrap(),
             DeviceCommand::Blink
         );
+        assert!(matches!(rx.try_recv(), Err(TryRecvError::Empty)));
     }
 
     #[test]
@@ -442,7 +486,8 @@ pub mod tests {
         make_device_with_pin(&mut devices[4]);
         make_device_with_pin(&mut devices[5]);
 
-        let selector = DeviceSelector::run();
+        let (tx, rx) = channel();
+        let selector = DeviceSelector::run(tx);
 
         // Adding all, except the last one (we simulate that this one is not yet plugged in)
         add_devices(devices.iter(), &selector);
@@ -461,11 +506,16 @@ pub mod tests {
                 DeviceCommand::Blink
             );
         }
+        assert!(matches!(rx.try_recv(), Err(TryRecvError::Empty)));
 
         // Remove all tokens
         for idx in [2, 4, 5] {
             remove_device(&devices[idx], &selector);
         }
+        assert!(matches!(
+            rx.recv_timeout(Duration::from_millis(500)),
+            Ok(StatusUpdate::NoDevicesFound)
+        ));
 
         // Adding one again
         send_i_am_token(&devices[4], &selector);
@@ -475,5 +525,57 @@ pub mod tests {
             devices[4].receiver.as_ref().unwrap().recv().unwrap(),
             DeviceCommand::Continue
         );
+    }
+
+    #[test]
+    fn test_device_selector_no_devices() {
+        let mut devices = vec![
+            Device::new("device selector 1").unwrap(),
+            Device::new("device selector 2").unwrap(),
+            Device::new("device selector 3").unwrap(),
+            Device::new("device selector 4").unwrap(),
+        ];
+
+        let (tx, rx) = channel();
+        // Make those actual tokens. The rest is interpreted as non-u2f-devices
+        make_device_with_pin(&mut devices[2]);
+        make_device_with_pin(&mut devices[3]);
+        let selector = DeviceSelector::run(tx);
+
+        // Adding no devices first (none are plugged in when we start)
+        add_devices(std::iter::empty(), &selector);
+        assert!(matches!(
+            rx.recv_timeout(Duration::from_millis(500)),
+            Ok(StatusUpdate::NoDevicesFound)
+        ));
+
+        // Adding the devices
+        add_devices(devices.iter(), &selector);
+        devices.iter_mut().for_each(|d| {
+            if !d.is_u2f() {
+                send_no_token(d, &selector);
+            }
+        });
+        assert!(matches!(rx.try_recv(), Err(TryRecvError::Empty)));
+
+        send_i_am_token(&devices[2], &selector);
+        send_i_am_token(&devices[3], &selector);
+
+        assert_eq!(
+            devices[2].receiver.as_ref().unwrap().recv().unwrap(),
+            DeviceCommand::Blink
+        );
+        assert_eq!(
+            devices[3].receiver.as_ref().unwrap().recv().unwrap(),
+            DeviceCommand::Blink
+        );
+
+        // Removing all blinking devices
+        remove_device(&devices[2], &selector);
+        remove_device(&devices[3], &selector);
+        assert!(matches!(
+            rx.recv_timeout(Duration::from_millis(500)),
+            Ok(StatusUpdate::NoDevicesFound)
+        ));
     }
 }

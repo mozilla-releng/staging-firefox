@@ -80,9 +80,9 @@ git = "https://github.com/mozilla/cubeb-pulse-rs"
 rev = "88194f91c8778fa608a19af7b91306094525595d"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/glean?tag=v70.0.0"]
+[source."git+https://github.com/mozilla/glean?tag=v70.2.0"]
 git = "https://github.com/mozilla/glean"
-tag = "v70.0.0"
+tag = "v70.2.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/happy-eyeballs?tag=v1.0.0"]
@@ -110,18 +110,18 @@ git = "https://github.com/mozilla/mp4parse-rust"
 rev = "f0c80783227a1fb46f34cb04e10607045eac4297"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/neqo?tag=v0.32.0"]
+[source."git+https://github.com/mozilla/neqo?tag=v0.33.0"]
 git = "https://github.com/mozilla/neqo"
-tag = "v0.32.0"
+tag = "v0.33.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/nss-rs"]
 git = "https://github.com/mozilla/nss-rs"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/rust-minidump/minidump-writer.git?rev=6744feee58804a78730d176cdcc31bb4f3021107"]
+[source."git+https://github.com/rust-minidump/minidump-writer.git?rev=3ab1604f91db05ec3f3a84d779a2871df7d9afd7"]
 git = "https://github.com/rust-minidump/minidump-writer.git"
-rev = "6744feee58804a78730d176cdcc31bb4f3021107"
+rev = "3ab1604f91db05ec3f3a84d779a2871df7d9afd7"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/servo/rust-cssparser?rev=9f3ceddf398f5ce4ab76fdad1b42ccb6c578a926"]

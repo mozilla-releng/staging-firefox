@@ -480,13 +480,6 @@ add_task(async function test_page_extractor_headless_teardown_unloads_wait() {
   const { HttpServer } = ChromeUtils.importESModule(
     "resource://testing-common/httpd.sys.mjs"
   );
-  const { PageExtractorParent } = ChromeUtils.importESModule(
-    "resource://gre/actors/PageExtractorParent.sys.mjs"
-  );
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.pageExtractor.headlessTimeoutMs", 1000]],
-  });
 
   const server = new HttpServer();
   let heldResponse;
@@ -503,7 +496,7 @@ add_task(async function test_page_extractor_headless_teardown_unloads_wait() {
 
   try {
     await Assert.rejects(
-      PageExtractorParent.getHeadlessExtractor({
+      readAtDeadline(url, {
         urlString: url,
         callback: () =>
           ok(false, "The callback must not run for a page that never loaded."),
@@ -555,7 +548,6 @@ add_task(async function test_page_extractor_headless_teardown_unloads_wait() {
   } finally {
     heldResponse?.finish();
     await new Promise(resolve => server.stop(resolve));
-    await SpecialPowers.popPrefEnv();
   }
 });
 

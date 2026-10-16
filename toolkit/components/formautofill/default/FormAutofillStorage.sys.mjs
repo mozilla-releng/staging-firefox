@@ -14,6 +14,7 @@ import {
   FormAutofillStorageBase,
 } from "resource://autofill/FormAutofillStorageBase.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
@@ -70,7 +71,7 @@ const CREDIT_CARD_RUST_ENABLED_PREF =
   "extensions.formautofill.creditCards.storage.rust.enabled";
 
 const CREDIT_CARD_RUST_ACTIVE_PREF =
-  "extensions.formautofill.creditCards.storage.rust.active";
+  FormAutofill.CREDITCARDS_RUST_STORAGE_ACTIVE_PREF;
 
 const CREDIT_CARD_RUST_MIGRATION_TEST_PREF =
   "extensions.formautofill.creditCards.storage.rust.runMigrationTest";
@@ -294,6 +295,9 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
         lazy.logger.log(
           `Not migrating ${collectionName}: a primary password is set.`
         );
+        if (json._data.some(record => !record.deleted)) {
+          this.#reportBlocked(Migrator, "primary_password", dryRun);
+        }
         return;
       }
       if (lazy.RustAutofillStore.primaryPasswordLocked) {
@@ -337,6 +341,7 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
         lazy.logger.log(
           `Deferring the ${collectionName} migration to an unlock.`
         );
+        this.#reportBlocked(Migrator, "keystore_locked", dryRun);
         if (!this.#observingUnlock) {
           Services.obs.addObserver(this, lazy.OSKeyStore.UNLOCKED_TOPIC);
           this.#observingUnlock = true;
@@ -350,6 +355,9 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
         lazy.logger.log(
           `Deferring the ${collectionName} migration behind the key store.`
         );
+        if (intoRust) {
+          this.#reportBlocked(Migrator, "keystore_busy", dryRun);
+        }
         lazy.OSKeyStore.ensureLoggedIn(false).then(() =>
           this.#queueCreditCardMigration()
         );
@@ -384,6 +392,24 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
       "formautofill-storage-changed",
       "migrate"
     );
+  }
+
+  /**
+   * Record that a copy into Rust this profile owes was held back.
+   *
+   * @param {Function} Migrator The collection's migrator class.
+   * @param {string} reason Which check held the copy back.
+   * @param {boolean} dryRun Whether the copy owed is a dry run.
+   */
+  #reportBlocked(Migrator, reason, dryRun) {
+    try {
+      Migrator.config.metrics.migrateToRustBlocked.record({
+        reason,
+        dry_run: dryRun,
+      });
+    } catch (e) {
+      lazy.logger.error("Could not report the blocked migration", e);
+    }
   }
 
   /**

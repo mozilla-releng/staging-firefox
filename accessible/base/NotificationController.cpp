@@ -849,9 +849,10 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       // Remove the TextLeafAccessible if:
       // 1. The rendered text is empty; or
       // 2. The text is invisible, semantically irrelevant whitespace before a
-      // hard line break.
+      // hard line break, and there is no CSS alt text.
       if (text.mString.IsEmpty() ||
-          nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(textFrame)) {
+          (nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(textFrame) &&
+           !nsCoreUtils::GetCssAltContent(textNode))) {
 #ifdef A11Y_LOG
         if (logging::IsEnabled(logging::eTree | logging::eText)) {
           logging::MsgBegin("TREE", "text node lost its content; doc: %p",

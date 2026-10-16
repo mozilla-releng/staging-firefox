@@ -16,7 +16,7 @@ namespace mozilla::dom::quota {
 
 DirtyTrackingAutoLock::DirtyTrackingAutoLock(Mutex& aLock,
                                              RefPtr<OriginInfo> aOriginInfo)
-    : mLock(&aLock), mOriginInfo(std::move(aOriginInfo)), mTouched(false) {
+    : mLock(&aLock), mOriginInfo(std::move(aOriginInfo)) {
   Lock();
   if (!IsValid()) {
     Unlock<true>();
@@ -35,7 +35,7 @@ DirtyTrackingAutoLock::DirtyTrackingAutoLock(
     Mutex& aLock,
     const nsClassHashtable<nsCStringHashKey, GroupInfoPair>& aGroupInfoPairs,
     const OriginMetadata& aOriginMetadata)
-    : mLock(&aLock), mOriginInfo(nullptr), mTouched(false) {
+    : mLock(&aLock), mOriginInfo(nullptr) {
   Lock();
   mOriginInfo = GetOriginInfo(aGroupInfoPairs, aOriginMetadata);
   if (!IsValid()) {

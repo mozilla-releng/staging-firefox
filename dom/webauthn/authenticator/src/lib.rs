@@ -49,10 +49,12 @@ pub use ctap2::commands::make_credentials::MakeCredentialsResult;
 use serde::Serialize;
 pub use statemachine::StateMachine;
 pub use status_update::{
-    BioEnrollmentCmd, CredManagementCmd, InteractiveRequest, InteractiveUpdate, StatusPinUv,
-    StatusUpdate,
+    BioEnrollmentCmd, CredManagementCmd, InteractiveRequest, InteractiveUpdate, MessageDirection,
+    StatusPinUv, StatusUpdate,
 };
-pub use transport::{BlinkResult, FidoDevice, FidoDeviceIO, FidoProtocol, VirtualFidoDevice};
+pub use transport::{
+    BlinkResult, CtapVersionSupport, FidoDevice, FidoDeviceIO, FidoProtocol, VirtualFidoDevice,
+};
 
 // Keep this in sync with the constants in u2fhid-capi.h.
 bitflags! {

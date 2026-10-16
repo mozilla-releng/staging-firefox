@@ -1524,10 +1524,34 @@ SettingGroupManager.registerGroups({
           imagesrc:
             "chrome://browser/content/ipprotection/assets/vpn-settings-get-started.svg",
           imagealignment: "end",
+          type: "vibrant",
         },
         items: [
           {
             id: "getStartedButton",
+            l10nId: "ip-protection-not-opted-in-button",
+            control: "moz-button",
+            slot: "actions",
+            controlAttrs: {
+              type: "primary",
+            },
+          },
+        ],
+      },
+      {
+        id: "ipProtectionNotOptedInV2",
+        l10nId: "ip-protection-not-opted-in-inclusions-enabled",
+        l10nArgs: { maxUsage: "50" },
+        control: "moz-promo",
+        controlAttrs: {
+          imagesrc:
+            "chrome://browser/content/ipprotection/assets/vpn-settings-get-started.svg",
+          imagealignment: "end",
+          type: "vibrant",
+        },
+        items: [
+          {
+            id: "getStartedButtonV2",
             l10nId: "ip-protection-not-opted-in-button",
             control: "moz-button",
             slot: "actions",
@@ -1588,7 +1612,7 @@ SettingGroupManager.registerGroups({
   },
   vpnSiteRules: {
     headingLevel: 2,
-    l10nId: "ip-protection-site-rules-list-section",
+    l10nId: "ip-protection-site-rules-list-section-1",
     supportPage: "built-in-vpn",
     items: [
       {
@@ -2112,23 +2136,48 @@ Preferences.addSetting({
   id: "ipProtectionUpgradeNotAvailable",
   pref: "browser.ipProtection.upgradeNotAvailable",
 });
+function ipProtectionNotOptedInVisible(inclusionsEnabled) {
+  return ({
+    ipProtectionVisible,
+    ipProtectionNotOptedIn,
+    ipProtectionSiteInclusionsFeatureEnabled,
+  }) =>
+    ipProtectionVisible.value &&
+    ipProtectionNotOptedIn.value &&
+    ipProtectionSiteInclusionsFeatureEnabled.value == inclusionsEnabled;
+}
+function enrollFromIPProtectionSettings() {
+  lazy.IPProtection.getPanel(window.browsingContext.topChromeWindow)?.enroll({
+    entrypoint: "vpn_integration_settings",
+    utm_source: "settings",
+  });
+}
+const IPP_NOT_OPTED_IN_DEPS = [
+  "ipProtectionVisible",
+  "ipProtectionNotOptedIn",
+  "ipProtectionSiteInclusionsFeatureEnabled",
+];
 Preferences.addSetting({
   id: "ipProtectionNotOptedInSection",
-  deps: ["ipProtectionVisible", "ipProtectionNotOptedIn"],
-  visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
-    ipProtectionVisible.value && ipProtectionNotOptedIn.value,
+  deps: IPP_NOT_OPTED_IN_DEPS,
+  visible: ipProtectionNotOptedInVisible(false),
 });
 Preferences.addSetting({
   id: "getStartedButton",
-  deps: ["ipProtectionVisible", "ipProtectionNotOptedIn"],
-  visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
-    ipProtectionVisible.value && ipProtectionNotOptedIn.value,
-  onUserClick() {
-    lazy.IPProtection.getPanel(window.browsingContext.topChromeWindow)?.enroll({
-      entrypoint: "vpn_integration_settings",
-      utm_source: "settings",
-    });
-  },
+  deps: IPP_NOT_OPTED_IN_DEPS,
+  visible: ipProtectionNotOptedInVisible(false),
+  onUserClick: enrollFromIPProtectionSettings,
+});
+Preferences.addSetting({
+  id: "ipProtectionNotOptedInV2",
+  deps: IPP_NOT_OPTED_IN_DEPS,
+  visible: ipProtectionNotOptedInVisible(true),
+});
+Preferences.addSetting({
+  id: "getStartedButtonV2",
+  deps: IPP_NOT_OPTED_IN_DEPS,
+  visible: ipProtectionNotOptedInVisible(true),
+  onUserClick: enrollFromIPProtectionSettings,
 });
 
 Preferences.addSetting({
@@ -2316,14 +2365,13 @@ function openIPPSiteRuleDialog(params) {
  * @param {HTMLElement} button The delete button that was clicked.
  * @param {string} website
  */
-async function deleteIPPSiteRule(button, website) {
+function deleteIPPSiteRule(button, website) {
   let list = /** @type {any} */ (button.closest("vpn-site-rules-list"));
-  if (!(await list.confirmDelete(website))) {
-    return;
-  }
-  lazy.IPPPermissionRules.setRule(
-    Services.scriptSecurityManager.createContentPrincipalFromOrigin(website),
-    lazy.IPPPrincipalRules.DEFAULT
+  list.confirmDelete(website, () =>
+    lazy.IPPPermissionRules.setRule(
+      Services.scriptSecurityManager.createContentPrincipalFromOrigin(website),
+      lazy.IPPPrincipalRules.DEFAULT
+    )
   );
 }
 
@@ -2332,12 +2380,9 @@ async function deleteIPPSiteRule(button, website) {
  *
  * @param {HTMLElement} button The delete all button that was clicked.
  */
-async function deleteAllIPPSiteRules(button) {
+function deleteAllIPPSiteRules(button) {
   let list = /** @type {any} */ (button.closest("vpn-site-rules-list"));
-  if (!(await list.confirmDeleteAll())) {
-    return;
-  }
-  Services.perms.removeByType(IPP_VPN_PERMISSION);
+  list.confirmDeleteAll(() => Services.perms.removeByType(IPP_VPN_PERMISSION));
 }
 
 Preferences.addSetting({

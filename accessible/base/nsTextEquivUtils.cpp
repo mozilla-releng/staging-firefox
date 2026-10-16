@@ -281,6 +281,11 @@ nsresult nsTextEquivUtils::AppendFromAccessibleChildren(
     if (GetReferencedAccs().Contains(child)) {
       continue;
     }
+    // XUL menupopups (e.g. in menu buttons) take their name from an ancestor,
+    // so they must not contribute to the ancestor's name.
+    if (child->IsMenuPopup()) {
+      continue;
+    }
     rv = AppendFromAccessible(child, aString);
     NS_ENSURE_SUCCESS(rv, rv);
   }

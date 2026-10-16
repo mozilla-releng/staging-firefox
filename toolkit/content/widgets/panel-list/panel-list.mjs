@@ -662,11 +662,8 @@ export class PanelList extends HTMLElement {
     ) {
       return false;
     }
-    let items = [
-      ...this.querySelectorAll("panel-item:not([hidden]):not([disabled])"),
-    ];
     let deepest = chain.at(-1);
-    let result = findItemForKey(items, key, {
+    let result = findItemForKey(this.getMenuItems(), key, {
       getLabel: item => item.label?.textContent ?? item.textContent,
       current: focused,
       matchLabels:
@@ -687,6 +684,25 @@ export class PanelList extends HTMLElement {
     // Arrow navigation resumes from wherever the walker last stopped.
     this.focusWalker.currentNode = result.item;
     return true;
+  }
+
+  /**
+   * Returns the items that keyboard navigation in this list reaches, in order,
+   * like XULPopupElement.getMenuItems.
+   *
+   * @param {object} [options]
+   * @param {boolean} [options.includeDisabled]
+   *   Whether to include disabled items, which keyboard navigation skips.
+   * @returns {Element[]}
+   */
+  getMenuItems({ includeDisabled = false } = {}) {
+    return [
+      ...this.querySelectorAll(
+        includeDisabled
+          ? "panel-item:not([hidden])"
+          : "panel-item:not([hidden]):not([disabled])"
+      ),
+    ];
   }
 
   /**

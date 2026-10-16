@@ -194,7 +194,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (
-      !gEditedPrincipal &&
+      !gEditedPrincipal?.equals(principal) &&
       IPPPermissionRules.getRule(principal) != IPPPrincipalRules.DEFAULT
     ) {
       event.preventDefault();

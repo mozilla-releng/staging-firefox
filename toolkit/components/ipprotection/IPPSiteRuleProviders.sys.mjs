@@ -331,6 +331,7 @@ export class IPPPermissionRuleProvider extends SiteRuleProvider {
       this.observe(subject, topic, data);
     };
     Services.obs.addObserver(this.#observer, "perm-changed");
+    this.#recordCounts();
   }
 
   uninit() {
@@ -364,6 +365,7 @@ export class IPPPermissionRuleProvider extends SiteRuleProvider {
       Glean.ipprotection.exclusionAdded.add(1);
     }
 
+    this.#recordCounts();
     this.notifyChange();
   }
 
@@ -439,6 +441,15 @@ export class IPPPermissionRuleProvider extends SiteRuleProvider {
       true /* exactHost */
     );
     return permissionObject;
+  }
+
+  #recordCounts() {
+    Glean.ipprotectionInclusions.count.set(
+      this.count(IPPPrincipalRules.INCLUDED)
+    );
+    Glean.ipprotectionExclusions.count.set(
+      this.count(IPPPrincipalRules.EXCLUDED)
+    );
   }
 
   #ruleForCapability(capability) {

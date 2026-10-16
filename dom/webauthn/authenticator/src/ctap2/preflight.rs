@@ -12,7 +12,9 @@ use crate::errors::AuthenticatorError;
 use crate::transport::errors::{ApduErrorStatus, HIDError};
 use crate::transport::{FidoDevice, FidoProtocol, VirtualFidoDevice};
 use crate::u2ftypes::CTAP1RequestAPDU;
+use crate::StatusUpdate;
 use sha2::{Digest, Sha256};
+use std::sync::mpsc::Sender;
 
 /// This command is used to check which key_handle is valid for this
 /// token. This is sent before a GetAssertion command, to determine which
@@ -91,6 +93,7 @@ pub(crate) fn do_credential_list_filtering_ctap1<Dev: FidoDevice>(
     cred_list: &[PublicKeyCredentialDescriptor],
     rp: &RelyingParty,
     client_data_hash: &ClientDataHash,
+    status: &Sender<StatusUpdate>,
 ) -> Option<PublicKeyCredentialDescriptor> {
     let key_handle = cred_list
         .iter()
@@ -104,7 +107,7 @@ pub(crate) fn do_credential_list_filtering_ctap1<Dev: FidoDevice>(
                 client_data_hash: client_data_hash.as_ref(),
                 rp,
             };
-            let res = dev.send_ctap1(&check_command);
+            let res = dev.send_ctap1(&check_command, Some(status));
             match res {
                 Ok(_) => Some(key_handle.clone()),
                 _ => None,
@@ -122,6 +125,7 @@ pub(crate) fn do_credential_list_filtering_ctap2<Dev: FidoDevice>(
     cred_list: &[PublicKeyCredentialDescriptor],
     rp: &RelyingParty,
     pin_uv_auth_token: Option<PinUvAuthToken>,
+    status: &Sender<StatusUpdate>,
 ) -> Result<Vec<PublicKeyCredentialDescriptor>, AuthenticatorError> {
     let info = dev
         .get_authenticator_info()
@@ -168,7 +172,7 @@ pub(crate) fn do_credential_list_filtering_ctap2<Dev: FidoDevice>(
             GetAssertionExtensions::default(),
         );
         silent_assert.set_pin_uv_auth_param(pin_uv_auth_token.clone())?;
-        match dev.send_msg(&silent_assert) {
+        match dev.send_msg(&silent_assert, Some(status)) {
             Ok(mut response) => {
                 // This chunk contains a key_handle that is already known to the device.
                 // Filter out all credentials the device returned. Those are valid.
@@ -209,13 +213,15 @@ pub(crate) fn silently_discover_credentials<Dev: FidoDevice>(
     cred_list: &[PublicKeyCredentialDescriptor],
     rp: &RelyingParty,
     client_data_hash: &ClientDataHash,
+    status: &Sender<StatusUpdate>,
 ) -> Vec<PublicKeyCredentialDescriptor> {
     if dev.get_protocol() == FidoProtocol::CTAP2 {
-        if let Ok(cred_list) = do_credential_list_filtering_ctap2(dev, cred_list, rp, None) {
+        if let Ok(cred_list) = do_credential_list_filtering_ctap2(dev, cred_list, rp, None, status)
+        {
             return cred_list;
         }
     } else if let Some(key_handle) =
-        do_credential_list_filtering_ctap1(dev, cred_list, rp, client_data_hash)
+        do_credential_list_filtering_ctap1(dev, cred_list, rp, client_data_hash, status)
     {
         return vec![key_handle];
     }
@@ -242,6 +248,7 @@ pub mod tests {
         },
         Assertion, GetAssertionResult,
     };
+    use std::sync::mpsc::channel;
 
     fn new_relying_party(name: &str) -> RelyingParty {
         RelyingParty {
@@ -328,7 +335,8 @@ pub mod tests {
         make_device_simple_u2f(&mut dev);
         let client_data_hash = ClientDataHash(Sha256::digest("").into());
         let rp = new_relying_party("preflight test");
-        let res = silently_discover_credentials(&mut dev, &[], &rp, &client_data_hash);
+        let (tx, _rx) = channel();
+        let res = silently_discover_credentials(&mut dev, &[], &rp, &client_data_hash, &tx);
         assert!(res.is_empty());
     }
 
@@ -355,7 +363,8 @@ pub mod tests {
         dev.add_upcoming_ctap1_request(&new_check_key_handle(&rp, &cdh, &allow_list[2]));
         dev.add_upcoming_ctap_response(()); // Valid credential - the code exits here now and doesn't even look at the last one
 
-        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &cdh);
+        let (tx, _rx) = channel();
+        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &cdh, &tx);
         assert_eq!(res, vec![allow_list[2].clone()]);
     }
 
@@ -379,7 +388,8 @@ pub mod tests {
         dev.add_upcoming_ctap1_request(&new_check_key_handle(&rp, &cdh, &allow_list[2]));
         dev.add_upcoming_ctap_response(()); // Valid credential - the code exits here now and doesn't even look at the last one
 
-        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &cdh);
+        let (tx, _rx) = channel();
+        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &cdh, &tx);
         assert_eq!(res, vec![allow_list[2].clone()]);
     }
 
@@ -389,7 +399,8 @@ pub mod tests {
         make_device_with_pin(&mut dev);
         let rp = new_relying_party("preflight test");
         let client_data_hash = ClientDataHash(Sha256::digest("").into());
-        let res = silently_discover_credentials(&mut dev, &[], &rp, &client_data_hash);
+        let (tx, _rx) = channel();
+        let res = silently_discover_credentials(&mut dev, &[], &rp, &client_data_hash, &tx);
         assert!(res.is_empty());
     }
 
@@ -404,7 +415,8 @@ pub mod tests {
         let allow_list = vec![new_credential(1, 4)];
         dev.add_upcoming_ctap2_request(&new_silent_assert(&rp, &allow_list));
         dev.add_upcoming_ctap_response(vec![new_assertion_response(&rp, None)]);
-        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash);
+        let (tx, _rx) = channel();
+        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash, &tx);
         assert_eq!(res, allow_list);
     }
 
@@ -417,7 +429,8 @@ pub mod tests {
         let allow_list = vec![new_credential(1, 4)];
         dev.add_upcoming_ctap2_request(&new_silent_assert(&rp, &allow_list));
         dev.add_upcoming_ctap_response(vec![new_assertion_response(&rp, Some(&allow_list[0]))]);
-        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash);
+        let (tx, _rx) = channel();
+        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash, &tx);
         assert_eq!(res, allow_list);
     }
 
@@ -448,7 +461,8 @@ pub mod tests {
             None,
         )));
         dev.add_upcoming_ctap_response(vec![new_assertion_response(&rp, Some(&allow_list[2]))]);
-        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash);
+        let (tx, _rx) = channel();
+        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash, &tx);
         assert_eq!(res, vec![allow_list[2].clone()]);
     }
 
@@ -475,7 +489,8 @@ pub mod tests {
             new_assertion_response(&rp, Some(&allow_list[2])),
             new_assertion_response(&rp, Some(&allow_list[3])),
         ]);
-        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash);
+        let (tx, _rx) = channel();
+        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash, &tx);
         assert_eq!(res, allow_list[1..].to_vec());
     }
 
@@ -503,7 +518,8 @@ pub mod tests {
             new_assertion_response(&rp, Some(&allow_list[2])),
             new_assertion_response(&rp, None), // This will be ignored
         ]);
-        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash);
+        let (tx, _rx) = channel();
+        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash, &tx);
         assert_eq!(res, allow_list[1..=2].to_vec());
     }
 
@@ -530,8 +546,9 @@ pub mod tests {
             &rp,
             &[allow_list[1].clone(), allow_list[3].clone()],
         ));
+        let (tx, _rx) = channel();
         dev.add_upcoming_ctap_response(vec![new_assertion_response(&rp, Some(&allow_list[1]))]);
-        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash);
+        let res = silently_discover_credentials(&mut dev, &allow_list, &rp, &client_data_hash, &tx);
         assert_eq!(res, vec![allow_list[1].clone()]);
     }
 }

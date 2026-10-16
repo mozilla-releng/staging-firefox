@@ -1,5 +1,6 @@
 [DEFAULT]
 support-files = ["head.js"]
+prefs = ["dom.quota_exceeded_error.enabled=true"]
 
 ["browser_contentWindow.js"]
 

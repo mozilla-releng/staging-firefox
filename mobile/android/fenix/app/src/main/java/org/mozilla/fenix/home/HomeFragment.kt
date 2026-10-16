@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -31,12 +32,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
@@ -153,6 +158,7 @@ import org.mozilla.fenix.home.toolbar.FenixHomeToolbar
 import org.mozilla.fenix.home.toolbar.HomeNavigationBar
 import org.mozilla.fenix.home.toolbar.HomeToolbarComposable
 import org.mozilla.fenix.home.toolbar.HomeToolbarComposable.Companion.DirectToSearchConfig
+import org.mozilla.fenix.home.toolbar.WallpaperToolbarScrim
 import org.mozilla.fenix.home.toolbar.homepageToolbarColors
 import org.mozilla.fenix.home.topsites.DefaultTopSitesView
 import org.mozilla.fenix.home.topsites.TopSitesBinding
@@ -684,15 +690,13 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                         !appState.value.mode.isPrivate &&
                         appState.value.microsurvey.current != null
 
-                LaunchedEffect(microsurveyVisible) {
-                    settings.shouldShowMicrosurveyPrompt = microsurveyVisible
-                }
-
                 val isPrivateMode = appState.value.mode.isPrivate
                 val currentWallpaper = appState.value.wallpaperState.currentWallpaper
                 val universalEdgeToEdge = settings.enableUniversalEdgeToEdgeWallpapers
-                val fadeContentEdges =
-                    universalEdgeToEdge && !isPrivateMode && !appState.value.searchState.isSearchActive
+                val showToolbarScrim = shouldShowToolbarScrim(appState.value)
+                var topBarHeight by remember { mutableIntStateOf(0) }
+                var bottomBarHeight by remember { mutableIntStateOf(0) }
+                val fadeContentEdges = isOverUniversalEdgeToEdgeWallpaper(appState.value)
 
                 LaunchedEffect(currentWallpaper.name, isPrivateMode, universalEdgeToEdge) {
                     if (universalEdgeToEdge) {
@@ -713,18 +717,13 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                             }
                     ) {
                         if (!isPrivateMode) {
-                            WallpaperBackground(
-                                wallpaper = currentWallpaper,
-                                loadBitmap = components.useCases.wallpaperUseCases.loadBitmap::invoke,
-                                onLoadFailed = {
-                                    requireComponents.settings.currentWallpaperTextColor = 0L
-                                    showComposeSnackbar(
-                                        SnackbarState(
-                                            message =
-                                                resources.getString(R.string.wallpaper_select_error_snackbar_message)
-                                        )
-                                    )
-                                },
+                            WallpaperBackground(currentWallpaper)
+                        }
+
+                        if (showToolbarScrim) {
+                            WallpaperToolbarScrim(
+                                topContentHeight = topBarHeight,
+                                bottomContentHeight = bottomBarHeight,
                             )
                         }
 
@@ -736,55 +735,21 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                                     }
                                     .imePadding(),
                             topBar = {
-                                if (isToolbarAtTop) {
-                                    ToolbarSlot(captureToolbarBounds, { toolbarBoundsInRoot = it }) {
-                                        toolbarView.Content()
-                                    }
-                                } else {
-                                    if (settings.shouldShowTabStripAtTop) {
-                                        TabStrip()
-                                    }
-                                }
+                                HomeTopBar(
+                                    settings = settings,
+                                    isToolbarAtTop = isToolbarAtTop,
+                                    captureToolbarBounds = captureToolbarBounds,
+                                    modifier = Modifier.onSizeChanged { topBarHeight = it.height },
+                                )
                             },
                             bottomBar = {
-                                val bottomChromeColors =
-                                    homepageToolbarColors(
-                                        isPrivateMode = isPrivateMode,
-                                        shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled(),
-                                    )
-                                val tabGroupsStripColor = bottomChromeColors.surface
-                                if (isToolbarAtTop) {
-                                    ToolbarSlot(captureToolbarBounds, { navbarBoundsInRoot = it }) {
-                                        TopDividerColumn(
-                                            showDivider =
-                                                settings.shouldShowTabStripAtBottom ||
-                                                    settings.shouldShowTabGroupsStrip,
-                                            modifier = Modifier.fillMaxWidth(),
-                                            dividerColor = bottomChromeColors.outlineVariant,
-                                        ) {
-                                            if (settings.shouldShowTabStripAtBottom) {
-                                                TabStrip()
-                                            }
-                                            if (settings.shouldShowTabGroupsStrip) {
-                                                TabGroupsStrip(containerColor = tabGroupsStripColor)
-                                            }
-                                            homeNavigationBar?.Content()
-                                        }
-                                    }
-                                } else {
-                                    ToolbarSlot(captureToolbarBounds, { toolbarBoundsInRoot = it }) {
-                                        TopDividerColumn(
-                                            showDivider = settings.shouldShowTabGroupsStrip,
-                                            modifier = Modifier.fillMaxWidth(),
-                                            dividerColor = bottomChromeColors.outlineVariant,
-                                        ) {
-                                            if (settings.shouldShowTabGroupsStrip) {
-                                                TabGroupsStrip(containerColor = tabGroupsStripColor)
-                                            }
-                                            toolbarView.Content()
-                                        }
-                                    }
-                                }
+                                HomeBottomBar(
+                                    settings = settings,
+                                    isToolbarAtTop = isToolbarAtTop,
+                                    isPrivateMode = isPrivateMode,
+                                    captureToolbarBounds = captureToolbarBounds,
+                                    modifier = Modifier.onSizeChanged { bottomBarHeight = it.height },
+                                )
                             },
                             containerColor = Color.Transparent,
                         ) { innerPadding ->
@@ -805,6 +770,117 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                 LaunchedEffect(Unit) {
                     onFirstHomepageFrameDrawn()
                 }
+            }
+        }
+    }
+
+    /**
+     * Draws [currentWallpaper] behind the homepage content. If its image fails to load, clears the saved wallpaper text
+     * color and shows an error snackbar.
+     */
+    @Composable
+    private fun WallpaperBackground(currentWallpaper: Wallpaper) {
+        WallpaperBackground(
+            wallpaper = currentWallpaper,
+            loadBitmap = components.useCases.wallpaperUseCases.loadBitmap::invoke,
+            onLoadFailed = {
+                requireComponents.settings.currentWallpaperTextColor = 0L
+                showComposeSnackbar(
+                    SnackbarState(message = resources.getString(R.string.wallpaper_select_error_snackbar_message))
+                )
+            },
+        )
+    }
+
+    /**
+     * Content of the homepage Scaffold's top bar: the toolbar when it is at the top, otherwise the tab strip if
+     * enabled.
+     */
+    @Composable
+    private fun HomeTopBar(
+        settings: Settings,
+        isToolbarAtTop: Boolean,
+        captureToolbarBounds: Boolean,
+        modifier: Modifier = Modifier,
+    ) {
+        Box(modifier = modifier) {
+            if (isToolbarAtTop) {
+                ToolbarSlot(captureToolbarBounds, { toolbarBoundsInRoot = it }) {
+                    toolbarView.Content()
+                }
+            } else if (settings.shouldShowTabStripAtTop) {
+                TabStrip()
+            }
+        }
+    }
+
+    /**
+     * Content of the homepage Scaffold's bottom bar: the navigation bar when the toolbar is at the top, otherwise the
+     * toolbar. Either is preceded by the enabled tab strips.
+     */
+    @Composable
+    private fun HomeBottomBar(
+        settings: Settings,
+        isToolbarAtTop: Boolean,
+        isPrivateMode: Boolean,
+        captureToolbarBounds: Boolean,
+        modifier: Modifier = Modifier,
+    ) {
+        val bottomChromeColors =
+            homepageToolbarColors(
+                isPrivateMode = isPrivateMode,
+                shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled(),
+            )
+        Box(modifier = modifier) {
+            if (isToolbarAtTop) {
+                HomeNavigationBottomBar(settings, captureToolbarBounds, bottomChromeColors)
+            } else {
+                HomeToolbarBottomBar(settings, captureToolbarBounds, bottomChromeColors)
+            }
+        }
+    }
+
+    /** Bottom bar used when the toolbar is at the top: the enabled tab strips above the navigation bar. */
+    @Composable
+    private fun HomeNavigationBottomBar(
+        settings: Settings,
+        captureToolbarBounds: Boolean,
+        colors: ColorScheme,
+    ) {
+        ToolbarSlot(captureToolbarBounds, { navbarBoundsInRoot = it }) {
+            TopDividerColumn(
+                showDivider = settings.shouldShowTabStripAtBottom || settings.shouldShowTabGroupsStrip,
+                modifier = Modifier.fillMaxWidth(),
+                dividerColor = colors.outlineVariant,
+            ) {
+                if (settings.shouldShowTabStripAtBottom) {
+                    TabStrip()
+                }
+                if (settings.shouldShowTabGroupsStrip) {
+                    TabGroupsStrip(containerColor = colors.surface)
+                }
+                homeNavigationBar?.Content()
+            }
+        }
+    }
+
+    /** Bottom bar used when the toolbar is at the bottom: the tab groups strip, if enabled, above the toolbar. */
+    @Composable
+    private fun HomeToolbarBottomBar(
+        settings: Settings,
+        captureToolbarBounds: Boolean,
+        colors: ColorScheme,
+    ) {
+        ToolbarSlot(captureToolbarBounds, { toolbarBoundsInRoot = it }) {
+            TopDividerColumn(
+                showDivider = settings.shouldShowTabGroupsStrip,
+                modifier = Modifier.fillMaxWidth(),
+                dividerColor = colors.outlineVariant,
+            ) {
+                if (settings.shouldShowTabGroupsStrip) {
+                    TabGroupsStrip(containerColor = colors.surface)
+                }
+                toolbarView.Content()
             }
         }
     }
@@ -977,12 +1053,26 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
         appStore.dispatch(AppAction.UpdateFirstFrameDrawn(drawn = true))
     }
 
+    /** Whether the homepage is drawn over a universal edge-to-edge wallpaper, outside private mode and search. */
+    private fun isOverUniversalEdgeToEdgeWallpaper(appState: AppState): Boolean =
+        requireComponents.settings.enableUniversalEdgeToEdgeWallpapers &&
+            !appState.mode.isPrivate &&
+            !appState.searchState.isSearchActive
+
+    /** Whether the gradient scrims are drawn behind the homepage toolbars over a universal edge-to-edge wallpaper. */
+    private fun shouldShowToolbarScrim(appState: AppState): Boolean =
+        isOverUniversalEdgeToEdgeWallpaper(appState) &&
+            !Wallpaper.isLocalWallpaper(appState.wallpaperState.currentWallpaper.name)
+
     @Composable
     private fun TabStrip(toolbarStore: BrowserToolbarStore? = null) {
         // Tabs will not be shown as selected on the homepage when Homepage as a New Tab is not
         // enabled.
         val isSelectDisabled = !requireComponents.settings.enableHomepageAsNewTab
         val toolbarState: BrowserToolbarState? = toolbarStore?.observeAsComposableState { it }?.value
+        // Tab strip doesn't show the gradient when displayed over edge to edge wallpaper.
+        val isOverEdgeToEdgeWallpaper =
+            requireComponents.appStore.observeAsComposableState { isOverUniversalEdgeToEdgeWallpaper(it) }.value
 
         FirefoxTheme {
             TabStrip(
@@ -993,6 +1083,7 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                         toolbarState = toolbarState,
                         browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                         settings = requireComponents.settings,
+                        isOverEdgeToEdgeWallpaper = isOverEdgeToEdgeWallpaper,
                     ),
                 hideWhenKeyboardShown = requireComponents.settings.shouldUseBottomTabStrip,
                 onAddTabClick = {

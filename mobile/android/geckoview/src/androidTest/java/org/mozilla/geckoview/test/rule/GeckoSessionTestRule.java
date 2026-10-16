@@ -24,6 +24,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.test.platform.app.InstrumentationRegistry;
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -69,6 +70,7 @@ import org.mozilla.geckoview.Autocomplete;
 import org.mozilla.geckoview.Autofill;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ExperimentDelegate;
+import org.mozilla.geckoview.ExperimentalGeckoViewApi;
 import org.mozilla.geckoview.GeckoDisplay;
 import org.mozilla.geckoview.GeckoPreferenceController;
 import org.mozilla.geckoview.GeckoResult;
@@ -90,6 +92,7 @@ import org.mozilla.geckoview.GeckoSession.TextInputDelegate;
 import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.MediaSession;
 import org.mozilla.geckoview.OrientationController;
+import org.mozilla.geckoview.PictureInPictureController;
 import org.mozilla.geckoview.SessionTextInput;
 import org.mozilla.geckoview.TranslationsController;
 import org.mozilla.geckoview.WebExtension;
@@ -108,6 +111,7 @@ import org.mozilla.geckoview.test.util.UiThreadUtils;
  * particular callbacks to be called, and methods for asserting that callbacks are called in the
  * proper order.
  */
+@OptIn(markerClass = ExperimentalGeckoViewApi.class)
 public class GeckoSessionTestRule implements TestRule {
   private static final String LOGTAG = "GeckoSessionTestRule";
 
@@ -844,6 +848,7 @@ public class GeckoSessionTestRule implements TestRule {
     DEFAULT_DELEGATES.add(SelectionActionDelegate.class);
     DEFAULT_DELEGATES.add(TextInputDelegate.class);
     DEFAULT_DELEGATES.add(TranslationsController.SessionTranslation.Delegate.class);
+    DEFAULT_DELEGATES.add(PictureInPictureController.SessionPictureInPicture.Delegate.class);
   }
 
   private static final Set<Class<?>> DEFAULT_RUNTIME_DELEGATES = new HashSet<>();
@@ -877,6 +882,7 @@ public class GeckoSessionTestRule implements TestRule {
           SelectionActionDelegate,
           TextInputDelegate,
           TranslationsController.SessionTranslation.Delegate,
+          PictureInPictureController.SessionPictureInPicture.Delegate,
           // Runtime delegates
           ActivityDelegate,
           Autocomplete.StorageDelegate,
@@ -1085,6 +1091,9 @@ public class GeckoSessionTestRule implements TestRule {
     } else if (cls == TranslationsController.SessionTranslation.Delegate.class) {
       session.setTranslationsSessionDelegate(
           (TranslationsController.SessionTranslation.Delegate) delegate);
+    } else if (cls == PictureInPictureController.SessionPictureInPicture.Delegate.class) {
+      session.setPictureInPictureDelegate(
+          (PictureInPictureController.SessionPictureInPicture.Delegate) delegate);
     } else {
       GeckoSession.class.getMethod("set" + cls.getSimpleName(), cls).invoke(session, delegate);
     }
@@ -1159,6 +1168,9 @@ public class GeckoSessionTestRule implements TestRule {
     }
     if (cls == TranslationsController.SessionTranslation.Delegate.class) {
       return GeckoSession.class.getMethod("getTranslationsSessionDelegate").invoke(session);
+    }
+    if (cls == PictureInPictureController.SessionPictureInPicture.Delegate.class) {
+      return GeckoSession.class.getMethod("getPictureInPictureDelegate").invoke(session);
     }
     return GeckoSession.class.getMethod("get" + cls.getSimpleName()).invoke(session);
   }
@@ -2572,6 +2584,20 @@ public class GeckoSessionTestRule implements TestRule {
     return dblPid.intValue();
   }
 
+  public long getSessionBrowsingContextGroupId(final @NonNull GeckoSession session) {
+    final Double dblId =
+        (Double) webExtensionApiCall(session, "GetBrowsingContextGroupIdForTab", null);
+    return dblId.longValue();
+  }
+
+  public String getSessionRemoteType(final @NonNull GeckoSession session) {
+    return (String) webExtensionApiCall(session, "GetRemoteTypeForTab", null);
+  }
+
+  public String mintPictureInPicturePlacementToken(final @NonNull GeckoSession session) {
+    return (String) webExtensionApiCall(session, "MintPictureInPicturePlacementToken", null);
+  }
+
   public void waitForContentTransformsReceived(final @NonNull GeckoSession session) {
     webExtensionApiCall(session, "WaitForContentTransformsReceived", null);
   }
@@ -2803,6 +2829,43 @@ public class GeckoSessionTestRule implements TestRule {
             args -> {
               args.put("selector", selector);
             });
+  }
+
+  /**
+   * Whether the video matching {@code selector} is being cloned visually into another video
+   * element, which is what a picture-in-picture player does to the video it shows.
+   *
+   * @param session Session the video lives in.
+   * @param selector Selector resolving to the video.
+   * @return Whether that video is being cloned.
+   */
+  public boolean isVideoCloning(final GeckoSession session, final String selector) {
+    return (Boolean)
+        webExtensionApiCall(
+            session,
+            "IsVideoCloning",
+            args -> {
+              args.put("selector", selector);
+            });
+  }
+
+  /**
+   * The message the video controls overlay shows over the video matching {@code selector}, as the
+   * user would read it.
+   *
+   * @param session Session the video lives in.
+   * @param selector Selector resolving to the video.
+   * @return The message shown, or null if the overlay shows none.
+   */
+  public @Nullable String getVideoStatusMessage(final GeckoSession session, final String selector) {
+    final Object message =
+        webExtensionApiCall(
+            session,
+            "GetVideoStatusMessage",
+            args -> {
+              args.put("selector", selector);
+            });
+    return message instanceof String ? (String) message : null;
   }
 
   public List<String> getRequestedLocales() {

@@ -687,8 +687,8 @@ add_task(async function test_edit_rule_dialog_prefilled() {
 
 // Test saving edits: changing only the VPN status replaces the rule for the
 // same website, changing the website deletes the old website's rule, and
-// changing it to a website that already has a rule replaces that rule instead
-// of reporting a duplicate.
+// changing it to a website that already has a rule reports a duplicate rather
+// than overwriting that rule.
 add_task(async function test_edit_rule_dialog_saves_changes() {
   const { ALLOW_ACTION, DENY_ACTION } = Ci.nsIPermissionManager;
 
@@ -747,19 +747,35 @@ add_task(async function test_edit_rule_dialog_saves_changes() {
     dialog = await openEditRuleDialog(list, browser, "https://acme.com");
     typeWebsite(dialog.dialogWin, dialog.websiteInput, "example.org");
     dialog.statusSelect.value = "off";
-    await closeRuleDialog(browser, dialog.acceptButton);
+    dialog.acceptButton.click();
 
+    is(
+      dialog.errorEl.getAttribute("data-l10n-id"),
+      "ip-protection-site-rule-duplicate-error",
+      "A website that already has a rule is reported"
+    );
+    ok(
+      dialog.websiteInput.hasAttribute("invalid"),
+      "Website field is marked invalid"
+    );
     Assert.deepEqual(
       storedRules(),
-      ["https://example.org"],
-      "Only the new website's rule is left"
+      ["https://acme.com", "https://example.org"],
+      "Both rules are still stored"
+    );
+    is(
+      capabilityFor("https://acme.com"),
+      ALLOW_ACTION,
+      "The edited rule is unchanged"
     );
     is(
       capabilityFor("https://example.org"),
-      DENY_ACTION,
-      "The edited rule replaced the existing one"
+      ALLOW_ACTION,
+      "The existing rule is not overwritten"
     );
-    await awaitRows(list, ["https://example.org"]);
+
+    await closeRuleDialog(browser, dialog.cancelButton);
+    await awaitRows(list, ["https://acme.com", "https://example.org"]);
   });
 });
 
@@ -844,4 +860,153 @@ add_task(async function test_delete_rule_dialog() {
       "Only the deleted site's permission is gone"
     );
   });
+});
+
+/**
+ * Stores two rules, clicks the delete button on the first, and runs a task
+ * once the confirmation dialog is showing.
+ */
+async function withDeleteRuleDialog(task) {
+  await withSiteRulesList(async (list, browser) => {
+    setSiteRule(
+      "https://kept.example.com",
+      Ci.nsIPermissionManager.ALLOW_ACTION
+    );
+    setSiteRule(
+      "https://gone.example.com",
+      Ci.nsIPermissionManager.DENY_ACTION
+    );
+    await awaitRows(list, [
+      "https://gone.example.com",
+      "https://kept.example.com",
+    ]);
+    await openDeleteDialog(
+      list,
+      browser,
+      list.querySelector(
+        `.vpn-site-rule[data-origin="https://gone.example.com"] .vpn-site-rule-delete`
+      )
+    );
+    await task(list, browser);
+  });
+}
+
+/**
+ * Clicks the primary button in the delete confirmation and waits for the
+ * dialog to report that the deletion failed.
+ */
+async function clickDeleteAndAwaitError(list, browser) {
+  EventUtils.synthesizeMouseAtCenter(
+    list.deleteConfirmButtonEl,
+    {},
+    browser.contentWindow
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    list.deleteDialogEl,
+    { attributes: true, attributeFilter: ["error"] },
+    () => list.deleteDialogEl.hasAttribute("error"),
+    { msg: "Delete error is shown" }
+  );
+  await list.updateComplete;
+}
+
+// Test a rule that cannot be deleted turns the confirmation into a retryable
+// error, and trying again once deleting works deletes the rule.
+add_task(async function test_delete_rule_dialog_error_retry() {
+  const { IPPPermissionRules } = ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs"
+  );
+  IPPPermissionRules.setRule = () => {
+    throw new Error("Cannot delete");
+  };
+
+  try {
+    await withDeleteRuleDialog(async (list, browser) => {
+      await clickDeleteAndAwaitError(list, browser);
+
+      ok(list.deleteDialogEl.open, "Dialog stays open");
+      Assert.deepEqual(
+        list.ownerDocument.l10n.getAttributes(list.deleteMessageEl),
+        { id: "ip-protection-delete-site-rule-error", args: null },
+        "Message says the rule couldn't be deleted"
+      );
+      is(
+        list.deleteMessageEl.getAttribute("role"),
+        "alert",
+        "The error is announced"
+      );
+      is(
+        list.deleteIconEl.getAttribute("src"),
+        "chrome://global/skin/icons/warning.svg",
+        "Dialog shows the warning icon"
+      );
+      is(
+        list.deleteConfirmButtonEl.dataset.l10nId,
+        "ip-protection-delete-site-rule-retry",
+        "Primary button has the expected label"
+      );
+      is(
+        list.deleteCancelButtonEl.dataset.l10nId,
+        "ip-protection-delete-site-rule-cancel",
+        "Secondary button has the expected label"
+      );
+      Assert.deepEqual(
+        storedRules(),
+        ["https://gone.example.com", "https://kept.example.com"],
+        "Nothing was deleted"
+      );
+
+      delete IPPPermissionRules.setRule;
+      await clickDeleteDialogButton(list, list.deleteConfirmButtonEl);
+
+      await awaitRows(list, ["https://kept.example.com"]);
+      Assert.deepEqual(
+        storedRules(),
+        ["https://kept.example.com"],
+        "Trying again deletes the rule"
+      );
+    });
+  } finally {
+    delete IPPPermissionRules.setRule;
+  }
+});
+
+// Test cancelling after a failed deletion keeps the rule, and the next
+// confirmation starts without the error.
+add_task(async function test_delete_rule_dialog_error_cancel() {
+  const { IPPPermissionRules } = ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs"
+  );
+  IPPPermissionRules.setRule = () => {
+    throw new Error("Cannot delete");
+  };
+
+  try {
+    await withDeleteRuleDialog(async (list, browser) => {
+      await clickDeleteAndAwaitError(list, browser);
+      await clickDeleteDialogButton(list, list.deleteCancelButtonEl);
+
+      Assert.deepEqual(
+        storedRules(),
+        ["https://gone.example.com", "https://kept.example.com"],
+        "Cancelling keeps the rule"
+      );
+
+      let confirmed = list.confirmDelete("https://gone.example.com", () => {});
+      await list.updateComplete;
+      ok(
+        !list.deleteDialogEl.hasAttribute("error"),
+        "The next confirmation has no error"
+      );
+      is(
+        list.deleteIconEl.getAttribute("src"),
+        "chrome://global/skin/icons/delete.svg",
+        "The next confirmation shows the delete icon"
+      );
+      await clickDeleteDialogButton(list, list.deleteCancelButtonEl);
+      ok(!(await confirmed), "Cancelling reports nothing was deleted");
+    });
+  } finally {
+    delete IPPPermissionRules.setRule;
+  }
 });

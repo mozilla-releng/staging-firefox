@@ -5,7 +5,6 @@
     "types/*.ts",
     "../../../tools/@types/browser-window.d.ts"
   ],
-  "exclude": ["content/tab-hover-preview.mjs"],
   "extends": "../../../tools/@types/tsconfig.json",
   "compilerOptions": {
     "checkJs": true,

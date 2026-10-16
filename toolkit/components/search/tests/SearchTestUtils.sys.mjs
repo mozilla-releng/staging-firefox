@@ -281,6 +281,38 @@ class _SearchTestUtils {
           if (!obj.variants) {
             obj.variants = [{ environment: { allRegionsAndLocales: true } }];
           }
+          if (lazy.SearchUtils.configV3FeatureGate) {
+            // Automatically translate instances of partnerCode & telemetrySuffix to
+            // the new format, to avoid having to transtion tests straight away.
+            if ("partnerCode" in obj.base) {
+              obj.base.partner = { default: { code: obj.base.partnerCode } };
+              delete obj.base.partnerCode;
+            }
+
+            function replacePartnerCode(section) {
+              let partner = {};
+              if ("partnerCode" in section) {
+                partner.code = section.partnerCode;
+                delete section.partnerCode;
+              }
+              if ("telemetrySuffix" in section) {
+                partner.telemetrySuffix = section.telemetrySuffix;
+                delete section.telemetrySuffix;
+              }
+              if ("code" in partner || "telemetrySuffix" in partner) {
+                section.partner = { default: partner };
+              }
+            }
+
+            for (let variant of obj.variants || []) {
+              replacePartnerCode(variant);
+
+              for (let subVariant of variant.subVariants || []) {
+                replacePartnerCode(subVariant);
+              }
+            }
+          }
+
           numEngines++;
           break;
         case "defaultEngines":

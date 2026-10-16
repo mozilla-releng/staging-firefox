@@ -264,6 +264,10 @@ ipprotection-message-bar.vpn-top-content {
   }
 }
 
+#site-inclusion-prompt {
+  margin-block-end: var(--space-small);
+}
+
 #site-rules-control {
   margin-block-end: var(--space-xsmall);
 }

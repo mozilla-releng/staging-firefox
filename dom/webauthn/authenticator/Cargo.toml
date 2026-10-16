@@ -1,6 +1,6 @@
 [package]
 name = "authenticator"
-version = "0.6.1"
+version = "0.6.2"
 authors = [ "Dana Keeler <dkeeler@mozilla.com>", "J.C. Jones <jc@mozilla.com>", "John Schanck <jschanck@mozilla.com>", "Kyle Machulis <kyle@nonpolynomial.com>", "Martin Sirringhaus <martin.sirringhaus@suse.com", "Tim Taubert <ttaubert@mozilla.com>" ]
 license = "MPL-2.0"
 description = "Library for interacting with CTAP1/2 security keys for Web Authentication. Used by Firefox."

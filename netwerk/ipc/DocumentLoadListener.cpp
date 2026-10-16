@@ -2298,7 +2298,7 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
 
   // Check if a process switch is needed.
   if (currentRemoteType == options.mRemoteType &&
-      !options.mReplaceBrowsingContext && !switchToNewTab) {
+      !options.mReplaceBrowsingContext) {
     MOZ_LOG(gProcessIsolationLog, LogLevel::Info,
             ("Process Switch Abort: type (%s) is compatible",
              options.mRemoteType.Stringify().get()));

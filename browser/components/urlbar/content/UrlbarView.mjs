@@ -2459,6 +2459,10 @@ export class UrlbarView {
     return newResult.testForceNewContent;
   }
 
+  /**
+   * @param {ResultRow} item
+   * @param {UrlbarResult} result
+   */
   // eslint-disable-next-line complexity
   #updateRow(item, result) {
     let oldResult = item.result;
@@ -2469,8 +2473,8 @@ export class UrlbarView {
     if (this.#needsNewContent(item, oldResult, result)) {
       // Recreate the row content except the buttons, which we'll reuse below.
       let buttons = item._elements.get("buttons");
-      while (item.lastChild) {
-        item.lastChild.remove();
+      while (item.lastElementChild) {
+        item.lastElementChild.remove();
       }
       item._elements.clear();
 
@@ -2529,7 +2533,9 @@ export class UrlbarView {
       item.appendChild(this.#createSecondaryAction(secAction, isFirstChild));
     } else if (
       secAction &&
-      secAction.key != actionsContainer.firstChild.dataset.action
+      secAction.key !=
+        /** @type {HTMLElement} */ (actionsContainer.firstElementChild).dataset
+          .action
     ) {
       item.replaceChild(
         this.#createSecondaryAction(secAction, isFirstChild),
@@ -2606,7 +2612,9 @@ export class UrlbarView {
       );
     }
 
-    let favicon = item._elements.get("favicon");
+    let favicon = /** @type {HTMLImageElement} */ (
+      item._elements.get("favicon")
+    );
     favicon.src = this.#iconForResult(result);
 
     let title = item._elements.get("title");
@@ -2837,7 +2845,7 @@ export class UrlbarView {
     }
 
     if (this.#showsActionLabels) {
-      item.toggleAttribute("has-action", actionSetter);
+      item.toggleAttribute("has-action", !!actionSetter);
       if (actionSetter) {
         actionSetter();
         item._originalActionSetter = actionSetter;

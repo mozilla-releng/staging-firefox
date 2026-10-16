@@ -24,6 +24,8 @@ import "chrome://browser/content/ipprotection/ipprotection-status-card.mjs";
 import "chrome://browser/content/ipprotection/ipprotection-status-box.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-toggle.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-promo.mjs";
 
 const SITE_RULES_SETTINGS_PANE = "privacy-vpnsiterules";
 
@@ -43,6 +45,7 @@ export default class IPProtectionContentElement extends MozLitElement {
     siteExclusionToggleEl: "#site-exclusion-toggle",
     siteExclusionDescriptionEl: '#site-exclusion-toggle > [slot="description"]',
     siteRulesEl: "#site-rules-control",
+    siteInclusionPromptEl: "#site-inclusion-prompt",
     settingsButtonEl: "#vpn-settings-button",
   };
 
@@ -209,6 +212,15 @@ export default class IPProtectionContentElement extends MozLitElement {
     win.openPreferences(SITE_RULES_SETTINGS_PANE);
     this.dispatchEvent(
       new CustomEvent("IPProtection:Close", { bubbles: true, composed: true })
+    );
+  }
+
+  handleDismissSiteInclusionPrompt() {
+    this.dispatchEvent(
+      new CustomEvent("IPProtection:DismissSiteInclusionPrompt", {
+        bubbles: true,
+        composed: true,
+      })
     );
   }
 
@@ -465,6 +477,29 @@ export default class IPProtectionContentElement extends MozLitElement {
     </div>`;
   }
 
+  siteInclusionPromptTemplate() {
+    if (
+      !this.state.isSiteInclusionsEnabled ||
+      !this.state.showSiteInclusionPrompt ||
+      !this.state.siteData ||
+      this.hasSiteInclusion ||
+      !this.canEnableConnection
+    ) {
+      return null;
+    }
+
+    return html`<moz-promo
+      id="site-inclusion-prompt"
+      type="vibrant"
+      data-l10n-id="site-rules-inclusion-prompt"
+      data-l10n-args=${JSON.stringify({
+        website: this.state.siteData.host,
+      })}
+      dismissable
+      @promo:user-dismissed=${this.handleDismissSiteInclusionPrompt}
+    ></moz-promo>`;
+  }
+
   siteRulesSettingsLinkTemplate() {
     if (
       !this.state.isSiteInclusionsEnabled ||
@@ -575,6 +610,7 @@ export default class IPProtectionContentElement extends MozLitElement {
         ${this.statusCardTemplate()}
         <div class="vpn-bottom-content">
           ${this.siteRulesStatusTemplate()}
+          ${this.siteInclusionPromptTemplate()}
           ${this.siteRulesSettingsLinkTemplate()} ${this.footerTemplate()}
         </div>
       `;

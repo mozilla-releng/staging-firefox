@@ -104,17 +104,21 @@ void APZBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
 
 APZEventResult APZBridgeChild::ReceiveInputEvent(
     InputData& aEvent, InputBlockCallback&& aCallback) {
-  MOZ_ASSERT(mIsOpen);
   APZThreadUtils::AssertOnControllerThread();
 
   APZEventResult res;
+  if (!mIsOpen) {
+    return res;
+  }
   switch (aEvent.mInputType) {
     case MULTITOUCH_INPUT: {
       MultiTouchInput& event = aEvent.AsMultiTouchInput();
       MultiTouchInput processedEvent;
 
-      SendReceiveMultiTouchInputEvent(event, !!aCallback, &res,
-                                      &processedEvent);
+      if (!SendReceiveMultiTouchInputEvent(event, !!aCallback, &res,
+                                           &processedEvent)) {
+        return APZEventResult();
+      }
 
       event = std::move(processedEvent);
       break;
@@ -123,7 +127,10 @@ APZEventResult APZBridgeChild::ReceiveInputEvent(
       MouseInput& event = aEvent.AsMouseInput();
       MouseInput processedEvent;
 
-      SendReceiveMouseInputEvent(event, !!aCallback, &res, &processedEvent);
+      if (!SendReceiveMouseInputEvent(event, !!aCallback, &res,
+                                      &processedEvent)) {
+        return APZEventResult();
+      }
 
       event = std::move(processedEvent);
       break;
@@ -132,8 +139,10 @@ APZEventResult APZBridgeChild::ReceiveInputEvent(
       PanGestureInput& event = aEvent.AsPanGestureInput();
       PanGestureInput processedEvent;
 
-      SendReceivePanGestureInputEvent(event, !!aCallback, &res,
-                                      &processedEvent);
+      if (!SendReceivePanGestureInputEvent(event, !!aCallback, &res,
+                                           &processedEvent)) {
+        return APZEventResult();
+      }
 
       event = std::move(processedEvent);
       break;
@@ -142,8 +151,10 @@ APZEventResult APZBridgeChild::ReceiveInputEvent(
       PinchGestureInput& event = aEvent.AsPinchGestureInput();
       PinchGestureInput processedEvent;
 
-      SendReceivePinchGestureInputEvent(event, !!aCallback, &res,
-                                        &processedEvent);
+      if (!SendReceivePinchGestureInputEvent(event, !!aCallback, &res,
+                                             &processedEvent)) {
+        return APZEventResult();
+      }
 
       event = std::move(processedEvent);
       break;
@@ -152,8 +163,10 @@ APZEventResult APZBridgeChild::ReceiveInputEvent(
       TapGestureInput& event = aEvent.AsTapGestureInput();
       TapGestureInput processedEvent;
 
-      SendReceiveTapGestureInputEvent(event, !!aCallback, &res,
-                                      &processedEvent);
+      if (!SendReceiveTapGestureInputEvent(event, !!aCallback, &res,
+                                           &processedEvent)) {
+        return APZEventResult();
+      }
 
       event = std::move(processedEvent);
       break;
@@ -162,8 +175,10 @@ APZEventResult APZBridgeChild::ReceiveInputEvent(
       ScrollWheelInput& event = aEvent.AsScrollWheelInput();
       ScrollWheelInput processedEvent;
 
-      SendReceiveScrollWheelInputEvent(event, !!aCallback, &res,
-                                       &processedEvent);
+      if (!SendReceiveScrollWheelInputEvent(event, !!aCallback, &res,
+                                            &processedEvent)) {
+        return APZEventResult();
+      }
 
       event = std::move(processedEvent);
       break;
@@ -172,7 +187,10 @@ APZEventResult APZBridgeChild::ReceiveInputEvent(
       KeyboardInput& event = aEvent.AsKeyboardInput();
       KeyboardInput processedEvent;
 
-      SendReceiveKeyboardInputEvent(event, !!aCallback, &res, &processedEvent);
+      if (!SendReceiveKeyboardInputEvent(event, !!aCallback, &res,
+                                         &processedEvent)) {
+        return APZEventResult();
+      }
 
       event = std::move(processedEvent);
       break;
@@ -184,7 +202,7 @@ APZEventResult APZBridgeChild::ReceiveInputEvent(
     }
   }
 
-  if (aCallback && res.WillHaveDelayedResult()) {
+  if (mIsOpen && aCallback && res.WillHaveDelayedResult()) {
     mInputBlockCallbacks.emplace(res.mInputBlockId, std::move(aCallback));
   }
 
@@ -334,8 +352,11 @@ void APZBridgeChild::ProcessUnhandledEvent(LayoutDeviceIntPoint* aRefPoint,
                                            ScrollableLayerGuid* aOutTargetGuid,
                                            uint64_t* aOutFocusSequenceNumber,
                                            LayersId* aOutLayersId) {
-  MOZ_ASSERT(mIsOpen);
   APZThreadUtils::AssertOnControllerThread();
+
+  if (!mIsOpen) {
+    return;
+  }
 
   SendProcessUnhandledEvent(*aRefPoint, aRefPoint, aOutTargetGuid,
                             aOutFocusSequenceNumber, aOutLayersId);
@@ -344,8 +365,11 @@ void APZBridgeChild::ProcessUnhandledEvent(LayoutDeviceIntPoint* aRefPoint,
 void APZBridgeChild::UpdateWheelTransaction(
     LayoutDeviceIntPoint aRefPoint, EventMessage aEventMessage,
     const Maybe<ScrollableLayerGuid>& aTargetGuid) {
-  MOZ_ASSERT(mIsOpen);
   APZThreadUtils::AssertOnControllerThread();
+
+  if (!mIsOpen) {
+    return;
+  }
 
   SendUpdateWheelTransaction(aRefPoint, aEventMessage, aTargetGuid);
 }

@@ -480,6 +480,22 @@ export class FirefoxProfileMigrator extends MigratorBase {
             }
             file.copyTo(dest, "");
           }
+
+          // Preserve the Glean client ID.
+          let gleanDir = this._getFileObject(dataReportingDir, "glean");
+          if (gleanDir && gleanDir.isDirectory()) {
+            let clientIdTxt = this._getFileObject(gleanDir, "client_id.txt");
+            if (clientIdTxt && clientIdTxt.exists()) {
+              let destGlean = currentProfileDir.clone();
+              destGlean.append("datareporting");
+              destGlean.append("glean");
+              destGlean.create(
+                Ci.nsIFile.DIRECTORY_TYPE,
+                lazy.FileUtils.PERMS_DIRECTORY
+              );
+              clientIdTxt.copyTo(destGlean, "");
+            }
+          }
         }
 
         try {

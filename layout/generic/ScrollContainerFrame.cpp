@@ -6331,6 +6331,10 @@ void ScrollContainerFrame::UpdateMinimumScaleSize(
 
   Document* doc = pc->Document();
   MOZ_ASSERT(doc, "The document should be valid");
+  if (doc->HasViewportSizeOverrideForMiniWindow()) {
+    // The override fixes the layout viewport size, so don't grow it.
+    return;
+  }
   if (doc->GetFullscreenElement()) {
     // Don't use the minimum scale size in the case of fullscreen state.
     // FIXME: 1508177: We will no longer need this.

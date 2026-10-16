@@ -15,10 +15,9 @@
 #include "Navigator.h"
 #include "WindowDestroyedEvent.h"
 #include "WindowNamedPropertiesHandler.h"
-#include "mozilla/AntiTrackingUtils.h"
+#include "mozilla/AntiTrackingOpenerHeuristics.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Result.h"
-#include "mozilla/StorageAccessAPIHelper.h"
 #include "mozilla/dom/AutoPrintEventDispatcher.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BrowserChild.h"
@@ -7016,7 +7015,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
   // success!
 
   if (!aCalledNoScript && !windowExists && uri && !forceNoOpener) {
-    MaybeAllowStorageForOpenedWindow(uri);
+    MaybeAllowStorageForOpenedWindow(this, uri);
   }
 
   if (domReturn && aDoJSFixups) {
@@ -7037,42 +7036,6 @@ nsresult nsGlobalWindowOuter::OpenInternal(
 
   domReturn.forget(aReturn);
   return NS_OK;
-}
-
-void nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI) {
-  nsGlobalWindowInner* inner = GetCurrentInnerWindowInternal(this);
-  if (NS_WARN_IF(!inner)) {
-    return;
-  }
-
-  // Don't trigger the heuristic for third-party trackers.
-  if (StaticPrefs::
-          privacy_restrict3rdpartystorage_heuristic_exclude_third_party_trackers() &&
-      nsContentUtils::IsThirdPartyTrackingResourceWindow(inner)) {
-    return;
-  }
-
-  // No 3rd party URL/window.
-  if (!AntiTrackingUtils::IsThirdPartyWindow(inner, aURI)) {
-    return;
-  }
-
-  Document* doc = inner->GetDoc();
-  if (!doc) {
-    return;
-  }
-  nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
-      aURI, doc->NodePrincipal()->OriginAttributesRef());
-
-  // We don't care when the asynchronous work finishes here.
-  // Without e10s or fission enabled this is run in the parent process.
-  if (XRE_IsParentProcess()) {
-    (void)StorageAccessAPIHelper::AllowAccessForOnParentProcess(
-        principal, GetBrowsingContext(), ContentBlockingNotifier::eOpener);
-  } else {
-    (void)StorageAccessAPIHelper::AllowAccessForOnChildProcess(
-        principal, GetBrowsingContext(), ContentBlockingNotifier::eOpener);
-  }
 }
 
 //*****************************************************************************

@@ -10478,8 +10478,6 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
         aMouseEventData.mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
   } else if (aType.EqualsLiteral("MozMouseHittest")) {
     msg = eMouseHitTest;
-  } else if (aType.EqualsLiteral("MozMouseExploreByTouch")) {
-    msg = eMouseExploreByTouch;
   } else {
     return Err(NS_ERROR_FAILURE);
   }

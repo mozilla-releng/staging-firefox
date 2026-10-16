@@ -5072,10 +5072,8 @@ fn parse_property_into(
 ) -> Result<(), ()> {
     let value = unsafe { value.as_str_unchecked() };
 
-    if let Some(non_custom) = property_id.non_custom_id() {
-        if !non_custom.allowed_in_rule(rule_type.into()) {
-            return Err(());
-        }
+    if !property_id.allowed_in_rule(rule_type.into()) {
+        return Err(());
     }
 
     parse_one_declaration_into(
@@ -11844,4 +11842,10 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
 #[unsafe(no_mangle)]
 pub extern "C" fn Servo_TextTransform_Case(text_transform: TextTransform) -> TextTransformCase {
     text_transform.case()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn Servo_RuleType_Supports_Declarations(rule_type: CssRuleType) -> bool {
+    rule_type == CssRuleType::NestedDeclarations
+        || CssRuleTypes::from(rule_type).allows_declarations()
 }

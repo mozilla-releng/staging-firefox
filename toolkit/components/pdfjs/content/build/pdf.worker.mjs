@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.5.140
- * pdfjsBuild = 288892aad
+ * pdfjsVersion = 6.5.152
+ * pdfjsBuild = 0252c1f6c
  */
 
 ;// ./src/shared/util.js
@@ -3050,7 +3050,7 @@ class ChunkedStream extends Stream {
   }
 }
 class ChunkedStreamManager {
-  #aborted = false;
+  #abortReason = null;
   #requestId = 0;
   #chunksNeededByRequest = new Map();
   #loadedStreamCapability = Promise.withResolvers();
@@ -3072,7 +3072,7 @@ class ChunkedStreamManager {
         value,
         done
       } = await rangeReader.read();
-      if (this.#aborted) {
+      if (this.#abortReason) {
         chunks = null;
         return;
       }
@@ -3092,13 +3092,16 @@ class ChunkedStreamManager {
     });
   }
   requestAllChunks(noFetch = false) {
-    if (!noFetch) {
+    if (!noFetch && !this.#abortReason) {
       const missingChunks = this.stream.getMissingChunks();
-      this._requestChunks(missingChunks);
+      this.#requestChunks(missingChunks);
     }
     return this.#loadedStreamCapability.promise;
   }
-  _requestChunks(chunks) {
+  #requestChunks(chunks) {
+    if (this.#abortReason) {
+      return Promise.reject(this.#abortReason);
+    }
     const chunksNeeded = new Set();
     for (const chunk of chunks) {
       if (!this.stream.hasChunk(chunk)) {
@@ -3128,12 +3131,8 @@ class ChunkedStreamManager {
         this.sendRequest(begin, end).catch(capability.reject);
       }
     }
-    return capability.promise.catch(reason => {
-      if (this.#aborted) {
-        return;
-      }
-      throw reason;
-    });
+    capability.promise.catch(() => {});
+    return capability.promise;
   }
   getStream() {
     return this.stream;
@@ -3146,7 +3145,7 @@ class ChunkedStreamManager {
     for (let chunk = beginChunk; chunk < endChunk; ++chunk) {
       chunks.push(chunk);
     }
-    return this._requestChunks(chunks);
+    return this.#requestChunks(chunks);
   }
   requestRanges(ranges = []) {
     const chunksToRequest = [];
@@ -3160,7 +3159,7 @@ class ChunkedStreamManager {
       }
     }
     chunksToRequest.sort((a, b) => a - b);
-    return this._requestChunks(chunksToRequest);
+    return this.#requestChunks(chunksToRequest);
   }
   groupChunks(chunks) {
     const groupedChunks = [];
@@ -3224,7 +3223,7 @@ class ChunkedStreamManager {
         loadedRequests.push(requestId);
       }
     }
-    if (!this.disableAutoFetch && this._requestsByChunk.size === 0) {
+    if (!this.disableAutoFetch && !this._requestsByChunk.size && !this.#abortReason) {
       let nextEmptyChunk;
       if (stream.numChunksLoaded === 1) {
         const lastChunk = stream.numChunks - 1;
@@ -3235,7 +3234,7 @@ class ChunkedStreamManager {
         nextEmptyChunk = stream.nextEmptyChunk(endChunk);
       }
       if (Number.isInteger(nextEmptyChunk)) {
-        this._requestChunks([nextEmptyChunk]);
+        this.#requestChunks([nextEmptyChunk]);
       }
     }
     for (const requestId of loadedRequests) {
@@ -3255,7 +3254,8 @@ class ChunkedStreamManager {
     return Math.floor((end - 1) / this.chunkSize) + 1;
   }
   abort(reason) {
-    this.#aborted = true;
+    assert(reason instanceof Error, "abort must have a valid reason");
+    this.#abortReason = reason;
     this.pdfStream?.cancelAllRequests(reason);
     for (const capability of this._promisesByRequest.values()) {
       capability.reject(reason);
@@ -3839,7 +3839,7 @@ class DecodeStream extends BaseStream {
   }
   async asyncGetBytesFromDecompressionStream(name) {
     this.stream.reset();
-    const bytes = this.stream.isAsync ? await this.stream.asyncGetBytes() : this.stream.getBytes();
+    const bytes = this.stream.isAsync && (await this.stream.asyncGetBytes()) || this.stream.getBytes();
     try {
       const {
         readable,
@@ -3929,9 +3929,10 @@ class StreamsSequenceStream extends DecodeStream {
       throw reason;
     }
     const bufferLength = this.bufferLength;
-    const newLength = bufferLength + chunk.length;
+    const newLength = bufferLength + chunk.length + 1;
     const buffer = this.ensureBuffer(newLength);
     buffer.set(chunk, bufferLength);
+    buffer[newLength - 1] = 0x0a;
     this.bufferLength = newLength;
   }
   getBaseStreams() {
@@ -9711,35 +9712,43 @@ class WasmImage {
       WasmImage.#instances.add(this);
     }
   }
-  async #getJsModule(fallbackCallback) {
-    let instance = null;
-    try {
-      const mod = await import(
-      /*webpackIgnore: true*/
-      /*@vite-ignore*/
-      `${WasmImage.#wasmUrl}${this._noWasmFilename}`);
-      instance = mod.default();
-    } catch (ex) {
-      warn(`#getJsModule: ${ex}`);
-    }
-    fallbackCallback(instance);
+  async #getJsInstance(imports) {
+    const {
+      default: instantiate
+    } = await import(
+    /*webpackIgnore: true*/
+    /*@vite-ignore*/
+    `${WasmImage.#wasmUrl}${this._noWasmFilename}`);
+    return {
+      exports: instantiate(imports)
+    };
   }
-  async #instantiateWasm(fallbackCallback, imports, successCallback) {
-    try {
-      if (!this.#buffer) {
-        if (WasmImage.#useWorkerFetch) {
-          this.#buffer = await fetchBinaryData(`${WasmImage.#wasmUrl}${this._filename}`);
-        } else {
-          throw new Error("Only worker-thread fetching supported.");
-        }
+  async #getWasmInstance(imports) {
+    if (!this.#buffer) {
+      if (WasmImage.#useWorkerFetch) {
+        this.#buffer = await fetchBinaryData(`${WasmImage.#wasmUrl}${this._filename}`);
+      } else {
+        throw new Error("Only worker-thread fetching supported.");
       }
-      const results = await WebAssembly.instantiate(this.#buffer, imports);
-      return successCallback(results.instance);
-    } catch (ex) {
-      warn(`#instantiateWasm: ${ex}`);
-      this.#getJsModule(fallbackCallback);
-      return null;
     }
+    const results = await WebAssembly.instantiate(this.#buffer, imports);
+    return results.instance;
+  }
+  async #instantiateWasm(failureCallback, imports, successCallback) {
+    if (WasmImage.#useWasm) {
+      try {
+        return successCallback(await this.#getWasmInstance(imports));
+      } catch (ex) {
+        warn(`#getWasmInstance: ${ex}`);
+      }
+    }
+    try {
+      return successCallback(await this.#getJsInstance(imports));
+    } catch (ex) {
+      warn(`#getJsInstance: ${ex}`);
+    }
+    failureCallback(null);
+    return null;
   }
   _getModule(ImageDecoder) {
     if (!this.#modulePromise) {
@@ -9747,16 +9756,10 @@ class WasmImage {
         promise,
         resolve
       } = Promise.withResolvers();
-      const promises = [promise];
-      if (!WasmImage.#useWasm) {
-        this.#getJsModule(resolve);
-      } else {
-        promises.push(ImageDecoder({
-          warn: warn,
-          instantiateWasm: this.#instantiateWasm.bind(this, resolve)
-        }));
-      }
-      this.#modulePromise = Promise.race(promises);
+      this.#modulePromise = Promise.race([promise, ImageDecoder({
+        warn: warn,
+        instantiateWasm: this.#instantiateWasm.bind(this, resolve)
+      })]);
     }
     return this.#modulePromise;
   }
@@ -9904,6 +9907,9 @@ class FlateStream extends DecodeStream {
     return data.length <= length ? data : data.subarray(0, length);
   }
   async asyncGetBytes() {
+    if (!this.#isAsync) {
+      return null;
+    }
     const {
       decompressed,
       compressed
@@ -9912,7 +9918,11 @@ class FlateStream extends DecodeStream {
       return decompressed;
     }
     this.#isAsync = false;
-    this.stream = new Stream(compressed, 2, compressed.length, this.stream.dict);
+    this.stream = new Stream(compressed, 2, compressed.length - 2, this.stream.dict);
+    this.bufferLength = 0;
+    this.eof = false;
+    this.codeBuf = 0;
+    this.codeSize = 0;
     this.reset();
     return null;
   }
@@ -9989,61 +9999,48 @@ class FlateStream extends DecodeStream {
     }
     return [codes, maxLen];
   }
-  #endsStreamOnError(err) {
-    info(err);
-    this.eof = true;
-  }
   readBlock() {
-    let buffer, hdr, len;
-    const str = this.stream;
     try {
-      hdr = this.getBits(3);
+      this.#readBlock();
     } catch (ex) {
-      this.#endsStreamOnError(ex.message);
-      return;
+      if (!(ex instanceof FormatError)) {
+        throw ex;
+      }
+      info(ex.message);
+      this.eof = true;
     }
+  }
+  #readBlock() {
+    let buffer, len;
+    const str = this.stream;
+    let hdr = this.getBits(3);
     if (hdr & 1) {
       this.eof = true;
     }
     hdr >>= 1;
     if (hdr === 0) {
-      let b;
-      if ((b = str.getByte()) === -1) {
-        this.#endsStreamOnError("Bad block header in flate stream");
-        return;
+      const header = str.getBytes(4);
+      if (header.length < 4) {
+        throw new FormatError("Bad block header in flate stream");
       }
-      let blockLen = b;
-      if ((b = str.getByte()) === -1) {
-        this.#endsStreamOnError("Bad block header in flate stream");
-        return;
-      }
-      blockLen |= b << 8;
-      if ((b = str.getByte()) === -1) {
-        this.#endsStreamOnError("Bad block header in flate stream");
-        return;
-      }
-      let check = b;
-      if ((b = str.getByte()) === -1) {
-        this.#endsStreamOnError("Bad block header in flate stream");
-        return;
-      }
-      check |= b << 8;
+      const blockLen = header[0] | header[1] << 8;
+      const check = header[2] | header[3] << 8;
       if (check !== (~blockLen & 0xffff) && (blockLen !== 0 || check !== 0)) {
         throw new FormatError("Bad uncompressed block length in flate stream");
       }
       this.codeBuf = 0;
       this.codeSize = 0;
-      const bufferLength = this.bufferLength,
-        end = bufferLength + blockLen;
-      buffer = this.ensureBuffer(end);
-      this.bufferLength = end;
       if (blockLen === 0) {
         if (str.peekByte() === -1) {
           this.eof = true;
         }
       } else {
         const block = str.getBytes(blockLen);
+        const bufferLength = this.bufferLength,
+          newLength = bufferLength + block.length;
+        buffer = this.ensureBuffer(newLength);
         buffer.set(block, bufferLength);
+        this.bufferLength = newLength;
         if (block.length < blockLen) {
           this.eof = true;
         }
@@ -10101,41 +10098,46 @@ class FlateStream extends DecodeStream {
     buffer = this.buffer;
     let limit = buffer ? buffer.length : 0;
     let pos = this.bufferLength;
-    while (true) {
-      let code1 = this.getCode(litCodeTable);
-      if (code1 < 256) {
-        if (pos + 1 >= limit) {
-          buffer = this.ensureBuffer(pos + 1);
+    try {
+      while (true) {
+        let code1 = this.getCode(litCodeTable);
+        if (code1 < 256) {
+          if (pos + 1 >= limit) {
+            buffer = this.ensureBuffer(pos + 1);
+            limit = buffer.length;
+          }
+          buffer[pos++] = code1;
+          continue;
+        }
+        if (code1 === 256) {
+          this.bufferLength = pos;
+          return;
+        }
+        code1 -= 257;
+        code1 = lengthDecode[code1];
+        let code2 = code1 >> 16;
+        if (code2 > 0) {
+          code2 = this.getBits(code2);
+        }
+        len = (code1 & 0xffff) + code2;
+        code1 = this.getCode(distCodeTable);
+        code1 = distDecode[code1];
+        code2 = code1 >> 16;
+        if (code2 > 0) {
+          code2 = this.getBits(code2);
+        }
+        const dist = (code1 & 0xffff) + code2;
+        if (pos + len >= limit) {
+          buffer = this.ensureBuffer(pos + len);
           limit = buffer.length;
         }
-        buffer[pos++] = code1;
-        continue;
+        for (let k = 0; k < len; ++k, ++pos) {
+          buffer[pos] = buffer[pos - dist];
+        }
       }
-      if (code1 === 256) {
-        this.bufferLength = pos;
-        return;
-      }
-      code1 -= 257;
-      code1 = lengthDecode[code1];
-      let code2 = code1 >> 16;
-      if (code2 > 0) {
-        code2 = this.getBits(code2);
-      }
-      len = (code1 & 0xffff) + code2;
-      code1 = this.getCode(distCodeTable);
-      code1 = distDecode[code1];
-      code2 = code1 >> 16;
-      if (code2 > 0) {
-        code2 = this.getBits(code2);
-      }
-      const dist = (code1 & 0xffff) + code2;
-      if (pos + len >= limit) {
-        buffer = this.ensureBuffer(pos + len);
-        limit = buffer.length;
-      }
-      for (let k = 0; k < len; ++k, ++pos) {
-        buffer[pos] = buffer[pos - dist];
-      }
+    } catch (ex) {
+      this.bufferLength = pos;
+      throw ex;
     }
   }
 }
@@ -10200,9 +10202,6 @@ async function OpenJPEG(moduleArg = {}) {
   var ENVIRONMENT_IS_WORKER = false;
   var programArgs = [];
   var thisProgram = "./this.program";
-  var quit_ = (status, toThrow) => {
-    throw toThrow;
-  };
   var _scriptName = import.meta.url;
   var scriptDirectory = "";
   var readAsync, readBinary;
@@ -10224,7 +10223,6 @@ async function OpenJPEG(moduleArg = {}) {
   var err = console.error.bind(console);
   var wasmBinary;
   var ABORT = false;
-  var EXITSTATUS;
   class EmscriptenEH {}
   class EmscriptenSjLj extends EmscriptenEH {}
   var runtimeInitialized = false;
@@ -10249,7 +10247,7 @@ async function OpenJPEG(moduleArg = {}) {
   }
   function initRuntime() {
     runtimeInitialized = true;
-    wasmExports["u"]();
+    wasmExports["j"]();
   }
   function postRun() {
     var postRun = Module["postRun"];
@@ -10258,15 +10256,6 @@ async function OpenJPEG(moduleArg = {}) {
       onPostRuns.push(...postRun);
     }
     callRuntimeCallbacks(onPostRuns);
-  }
-  function abort(what) {
-    Module["onAbort"]?.(what);
-    what = `Aborted(${what})`;
-    err(what);
-    ABORT = true;
-    what += ". Build with -sASSERTIONS for more info.";
-    var e = new WebAssembly.RuntimeError(what);
-    throw e;
   }
   var wasmBinaryFile;
   function getWasmImports() {
@@ -10304,71 +10293,6 @@ async function OpenJPEG(moduleArg = {}) {
   var onPostRuns = [];
   var onPreRuns = [];
   var noExitRuntime = true;
-  var __abort_js = () => abort("");
-  var runtimeKeepaliveCounter = 0;
-  var __emscripten_runtime_keepalive_clear = () => {
-    noExitRuntime = false;
-    runtimeKeepaliveCounter = 0;
-  };
-  var timers = {};
-  var handleException = e => {
-    if (e instanceof ExitStatus || e == "unwind") {
-      return EXITSTATUS;
-    }
-    quit_(1, e);
-  };
-  var keepRuntimeAlive = () => noExitRuntime || runtimeKeepaliveCounter > 0;
-  var _proc_exit = code => {
-    EXITSTATUS = code;
-    if (!keepRuntimeAlive()) {
-      Module["onExit"]?.(code);
-      ABORT = true;
-    }
-    quit_(code, new ExitStatus(code));
-  };
-  var exitJS = (status, implicit) => {
-    EXITSTATUS = status;
-    _proc_exit(status);
-  };
-  var _exit = exitJS;
-  var maybeExit = () => {
-    if (!keepRuntimeAlive()) {
-      try {
-        _exit(EXITSTATUS);
-      } catch (e) {
-        handleException(e);
-      }
-    }
-  };
-  var callUserCallback = (func, ...args) => {
-    if (ABORT) {
-      return;
-    }
-    try {
-      return func(...args);
-    } catch (e) {
-      handleException(e);
-    } finally {
-      maybeExit();
-    }
-  };
-  var _emscripten_get_now = () => performance.now();
-  var __setitimer_js = (which, timeout_ms) => {
-    if (timers[which]) {
-      clearTimeout(timers[which].id);
-      delete timers[which];
-    }
-    if (!timeout_ms) return 0;
-    var id = setTimeout(() => {
-      delete timers[which];
-      callUserCallback(__emscripten_timeout, which, _emscripten_get_now());
-    }, timeout_ms);
-    timers[which] = {
-      id,
-      timeout_ms
-    };
-    return 0;
-  };
   var HEAP32;
   function _copy_component(comp_ptr, index, nb_comps, nb_pixels) {
     comp_ptr >>= 2;
@@ -10376,43 +10300,6 @@ async function OpenJPEG(moduleArg = {}) {
     const comp = HEAP32.subarray(comp_ptr, comp_ptr + nb_pixels);
     for (let i = 0, j = index; i < nb_pixels; i++, j += nb_comps) {
       imageData[j] = comp[i];
-    }
-  }
-  function _copy_pixels_1(compG_ptr, nb_pixels) {
-    compG_ptr >>= 2;
-    const imageData = Module.imageData = new Uint8ClampedArray(nb_pixels);
-    const compG = HEAP32.subarray(compG_ptr, compG_ptr + nb_pixels);
-    imageData.set(compG);
-  }
-  function _copy_pixels_3(compR_ptr, compG_ptr, compB_ptr, nb_pixels) {
-    compR_ptr >>= 2;
-    compG_ptr >>= 2;
-    compB_ptr >>= 2;
-    const imageData = Module.imageData = new Uint8ClampedArray(nb_pixels * 3);
-    const compR = HEAP32.subarray(compR_ptr, compR_ptr + nb_pixels);
-    const compG = HEAP32.subarray(compG_ptr, compG_ptr + nb_pixels);
-    const compB = HEAP32.subarray(compB_ptr, compB_ptr + nb_pixels);
-    for (let i = 0; i < nb_pixels; i++) {
-      imageData[3 * i] = compR[i];
-      imageData[3 * i + 1] = compG[i];
-      imageData[3 * i + 2] = compB[i];
-    }
-  }
-  function _copy_pixels_4(compR_ptr, compG_ptr, compB_ptr, compA_ptr, nb_pixels) {
-    compR_ptr >>= 2;
-    compG_ptr >>= 2;
-    compB_ptr >>= 2;
-    compA_ptr >>= 2;
-    const imageData = Module.imageData = new Uint8ClampedArray(nb_pixels * 4);
-    const compR = HEAP32.subarray(compR_ptr, compR_ptr + nb_pixels);
-    const compG = HEAP32.subarray(compG_ptr, compG_ptr + nb_pixels);
-    const compB = HEAP32.subarray(compB_ptr, compB_ptr + nb_pixels);
-    const compA = HEAP32.subarray(compA_ptr, compA_ptr + nb_pixels);
-    for (let i = 0; i < nb_pixels; i++) {
-      imageData[4 * i] = compR[i];
-      imageData[4 * i + 1] = compG[i];
-      imageData[4 * i + 2] = compB[i];
-      imageData[4 * i + 3] = compA[i];
     }
   }
   var getHeapMax = () => 2147483648;
@@ -10444,101 +10331,6 @@ async function OpenJPEG(moduleArg = {}) {
       }
     }
     return false;
-  };
-  var ENV = {};
-  var getExecutableName = () => thisProgram;
-  var getEnvStrings = () => {
-    if (!getEnvStrings.strings) {
-      var lang = (globalThis.navigator?.language ?? "C").replace("-", "_") + ".UTF-8";
-      var env = {
-        USER: "web_user",
-        LOGNAME: "web_user",
-        PATH: "/",
-        PWD: "/",
-        HOME: "/home/web_user",
-        LANG: lang,
-        _: getExecutableName()
-      };
-      for (var x in ENV) {
-        if (ENV[x] === undefined) delete env[x];else env[x] = ENV[x];
-      }
-      var strings = [];
-      for (var x in env) {
-        strings.push(`${x}=${env[x]}`);
-      }
-      getEnvStrings.strings = strings;
-    }
-    return getEnvStrings.strings;
-  };
-  var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
-    if (!(maxBytesToWrite > 0)) return 0;
-    var startIdx = outIdx;
-    var endIdx = outIdx + maxBytesToWrite - 1;
-    for (var i = 0; i < str.length; ++i) {
-      var u = str.codePointAt(i);
-      if (u <= 127) {
-        if (outIdx >= endIdx) break;
-        heap[outIdx++] = u;
-      } else if (u <= 2047) {
-        if (outIdx + 1 >= endIdx) break;
-        heap[outIdx++] = 192 | u >> 6;
-        heap[outIdx++] = 128 | u & 63;
-      } else if (u <= 65535) {
-        if (outIdx + 2 >= endIdx) break;
-        heap[outIdx++] = 224 | u >> 12;
-        heap[outIdx++] = 128 | u >> 6 & 63;
-        heap[outIdx++] = 128 | u & 63;
-      } else {
-        if (outIdx + 3 >= endIdx) break;
-        heap[outIdx++] = 240 | u >> 18;
-        heap[outIdx++] = 128 | u >> 12 & 63;
-        heap[outIdx++] = 128 | u >> 6 & 63;
-        heap[outIdx++] = 128 | u & 63;
-        i++;
-      }
-    }
-    heap[outIdx] = 0;
-    return outIdx - startIdx;
-  };
-  var stringToUTF8 = (str, outPtr, maxBytesToWrite) => stringToUTF8Array(str, HEAPU8, outPtr, maxBytesToWrite);
-  var HEAPU32;
-  var _environ_get = (__environ, environ_buf) => {
-    var bufSize = 0;
-    var envp = 0;
-    for (var string of getEnvStrings()) {
-      var ptr = environ_buf + bufSize;
-      HEAPU32[__environ + envp >> 2] = ptr;
-      bufSize += stringToUTF8(string, ptr, Infinity) + 1;
-      envp += 4;
-    }
-    return 0;
-  };
-  var lengthBytesUTF8 = str => {
-    var len = 0;
-    for (var i = 0; i < str.length; ++i) {
-      var c = str.charCodeAt(i);
-      if (c <= 127) {
-        len++;
-      } else if (c <= 2047) {
-        len += 2;
-      } else if (c >= 55296 && c <= 57343) {
-        len += 4;
-        ++i;
-      } else {
-        len += 3;
-      }
-    }
-    return len;
-  };
-  var _environ_sizes_get = (penviron_count, penviron_buf_size) => {
-    var strings = getEnvStrings();
-    HEAPU32[penviron_count >> 2] = strings.length;
-    var bufSize = 0;
-    for (var string of strings) {
-      bufSize += lengthBytesUTF8(string) + 1;
-    }
-    HEAPU32[penviron_buf_size >> 2] = bufSize;
-    return 0;
   };
   var INT53_MAX = 9007199254740992;
   var INT53_MIN = -9007199254740992;
@@ -10597,6 +10389,7 @@ async function OpenJPEG(moduleArg = {}) {
     }
   };
   var UTF8ToString = (ptr, maxBytesToRead, ignoreNul) => ptr ? UTF8ArrayToString(HEAPU8, ptr, maxBytesToRead, ignoreNul) : "";
+  var HEAPU32;
   var _fd_write = (fd, iov, iovcnt, pnum) => {
     var num = 0;
     for (var i = 0; i < iovcnt; i++) {
@@ -10611,26 +10404,6 @@ async function OpenJPEG(moduleArg = {}) {
     HEAPU32[pnum >> 2] = num;
     return 0;
   };
-  function _gray_to_rgba(compG_ptr, nb_pixels) {
-    compG_ptr >>= 2;
-    const imageData = Module.imageData = new Uint8ClampedArray(nb_pixels * 4);
-    const compG = HEAP32.subarray(compG_ptr, compG_ptr + nb_pixels);
-    for (let i = 0; i < nb_pixels; i++) {
-      imageData[4 * i] = imageData[4 * i + 1] = imageData[4 * i + 2] = compG[i];
-      imageData[4 * i + 3] = 255;
-    }
-  }
-  function _graya_to_rgba(compG_ptr, compA_ptr, nb_pixels) {
-    compG_ptr >>= 2;
-    compA_ptr >>= 2;
-    const imageData = Module.imageData = new Uint8ClampedArray(nb_pixels * 4);
-    const compG = HEAP32.subarray(compG_ptr, compG_ptr + nb_pixels);
-    const compA = HEAP32.subarray(compA_ptr, compA_ptr + nb_pixels);
-    for (let i = 0; i < nb_pixels; i++) {
-      imageData[4 * i] = imageData[4 * i + 1] = imageData[4 * i + 2] = compG[i];
-      imageData[4 * i + 3] = compA[i];
-    }
-  }
   function _init_pixels(size) {
     Module.imageData = new Uint8ClampedArray(size);
   }
@@ -10638,20 +10411,8 @@ async function OpenJPEG(moduleArg = {}) {
     const message = UTF8ToString(message_ptr);
     (Module.warn || console.warn)(`OpenJPEG: ${message}`);
   }
-  function _rgb_to_rgba(compR_ptr, compG_ptr, compB_ptr, nb_pixels) {
-    compR_ptr >>= 2;
-    compG_ptr >>= 2;
-    compB_ptr >>= 2;
-    const imageData = Module.imageData = new Uint8ClampedArray(nb_pixels * 4);
-    const compR = HEAP32.subarray(compR_ptr, compR_ptr + nb_pixels);
-    const compG = HEAP32.subarray(compG_ptr, compG_ptr + nb_pixels);
-    const compB = HEAP32.subarray(compB_ptr, compB_ptr + nb_pixels);
-    for (let i = 0; i < nb_pixels; i++) {
-      imageData[4 * i] = compR[i];
-      imageData[4 * i + 1] = compG[i];
-      imageData[4 * i + 2] = compB[i];
-      imageData[4 * i + 3] = 255;
-    }
+  function _setImageData(array_ptr, array_size) {
+    Module.imageData = new Uint8ClampedArray(HEAPU8.slice(array_ptr, array_ptr + array_size).buffer);
   }
   function _storeErrorMessage(message_ptr) {
     const message = UTF8ToString(message_ptr);
@@ -10677,34 +10438,22 @@ async function OpenJPEG(moduleArg = {}) {
     }
   }
   Module["writeArrayToMemory"] = writeArrayToMemory;
-  var _malloc, _free, _jp2_decode, __emscripten_timeout, memory, __indirect_function_table, wasmMemory;
+  var _malloc, _free, _jp2_decode, memory, __indirect_function_table, wasmMemory;
   function assignWasmExports(wasmExports) {
-    _malloc = Module["_malloc"] = wasmExports["v"];
-    _free = Module["_free"] = wasmExports["w"];
-    _jp2_decode = Module["_jp2_decode"] = wasmExports["x"];
-    __emscripten_timeout = wasmExports["y"];
-    memory = wasmMemory = wasmExports["t"];
+    _malloc = Module["_malloc"] = wasmExports["k"];
+    _free = Module["_free"] = wasmExports["l"];
+    _jp2_decode = Module["_jp2_decode"] = wasmExports["m"];
+    memory = wasmMemory = wasmExports["i"];
     __indirect_function_table = wasmExports["__indirect_function_table"];
   }
   var wasmImports = {
-    n: __abort_js,
-    m: __emscripten_runtime_keepalive_clear,
-    j: __setitimer_js,
-    c: _copy_component,
-    g: _copy_pixels_1,
-    f: _copy_pixels_3,
-    e: _copy_pixels_4,
-    k: _emscripten_resize_heap,
-    p: _environ_get,
-    q: _environ_sizes_get,
-    o: _fd_seek,
-    r: _fd_write,
-    i: _gray_to_rgba,
-    s: _graya_to_rgba,
-    d: _init_pixels,
-    b: _jsPrintWarning,
-    l: _proc_exit,
-    h: _rgb_to_rgba,
+    g: _copy_component,
+    c: _emscripten_resize_heap,
+    d: _fd_seek,
+    b: _fd_write,
+    h: _init_pixels,
+    e: _jsPrintWarning,
+    f: _setImageData,
     a: _storeErrorMessage
   };
   async function run() {
@@ -64628,7 +64377,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.5.140";
+    const workerVersion = "6.5.152";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match the Worker version "${workerVersion}".`);
     }
@@ -65329,9 +65078,8 @@ class WorkerMessageHandler {
       terminated = true;
       const waitOn = [];
       if (pdfManager) {
-        pdfManager.terminate(new AbortException("Worker was terminated."));
-        const cleanupPromise = pdfManager.cleanup();
-        waitOn.push(cleanupPromise);
+        await pdfManager.terminate(new AbortException("Worker was terminated."));
+        waitOn.push(pdfManager.cleanup());
         pdfManager = null;
       } else {
         clearGlobalCaches();

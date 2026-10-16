@@ -538,17 +538,20 @@ class LogModuleManager {
       return;
     }
 
-    const char* filename = aFilename ? aFilename : "";
-    char buf[2048];
-    filename = detail::ExpandLogFileName(filename, buf);
-
     // Can't use rotate or maxsize at runtime yet.
     MOZ_ASSERT(mRotate == 0,
                "We don't allow rotate for runtime logfile changes");
-    mOutFilePath.reset(strdup(filename));
+
+    detail::LogFile* newFile = nullptr;
+    if (aFilename) {
+      char buf[2048];
+      mOutFilePath.reset(strdup(detail::ExpandLogFileName(aFilename, buf)));
+      newFile = OpenFile(false, 0);
+    } else {
+      mOutFilePath.reset(strdup(""));
+    }
 
     // Exchange mOutFile and set it to be released once all the writes are done.
-    detail::LogFile* newFile = OpenFile(false, 0);
     detail::LogFile* oldFile = mOutFile.exchange(newFile);
 
     // Since we don't allow changing the logfile if MOZ_LOG_FILE is already set,

@@ -26,6 +26,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/dom/BufferSourceBinding.h"
+#include "mozilla/dom/CanvasRenderingContextHelper.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/GeneratePlaceholderCanvasData.h"
 #include "mozilla/dom/ToJSValue.h"
@@ -1051,16 +1052,12 @@ void ClientWebGLContext::OnMemoryPressure() {
 }
 
 NS_IMETHODIMP
-ClientWebGLContext::SetContextOptions(JSContext* cx,
-                                      JS::Handle<JS::Value> options,
-                                      ErrorResult& aRvForDictionaryInit) {
-  if (mInitialOptions && options.isNullOrUndefined()) return NS_OK;
-
-  dom::WebGLContextAttributes attributes;
-  if (!attributes.Init(cx, options)) {
-    aRvForDictionaryInit.Throw(NS_ERROR_UNEXPECTED);
+ClientWebGLContext::SetContextOptions(
+    const dom::CanvasRenderingContextOptions& aOptions) {
+  if (!aOptions.is<dom::WebGLContextAttributes>()) {
     return NS_ERROR_UNEXPECTED;
   }
+  const auto& attributes = aOptions.as<dom::WebGLContextAttributes>();
 
   WebGLContextOptions newOpts;
 

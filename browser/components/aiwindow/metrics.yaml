@@ -1809,6 +1809,42 @@ smart_window:
         description: >
           Reason the original prompt was shown
 
+  browser_action_prompt_toggle_all:
+    type: event
+    description: |
+      User clicks "Select all" or "Deselect all" on a tab confirmation card.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072041
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072041
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      action: *browser_action
+      prompt_type:
+        type: string
+        description: >
+          Type of prompt shown: disambiguation, batch_preview, or safety_confirmation
+      entrypoint:
+        type: string
+        description: >
+          Where the card came from: browser_action (a chat request handled by
+          the manage_tabs tool) or resume (a "Pick up where you left off" pill)
+      toggle:
+        type: string
+        description: >
+          Which button the user clicked: select_all or deselect_all
+      candidates:
+        type: quantity
+        unit: count
+        description: >
+          Number of tabs shown on the card
+
   browser_action_undo:
     type: event
     description: |

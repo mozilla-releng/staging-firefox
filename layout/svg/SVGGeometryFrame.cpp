@@ -892,12 +892,12 @@ WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
       aBuilder.PushLinearGradient(
           wrRect, wrRect, backfaceVisible, toItemVector(aG.mStart),
           toItemVector(aG.mEnd), aG.mStops, aG.mExtendMode, tileSize,
-          tileSpacing, antialias);
+          tileSpacing, antialias, wr::AlphaMode::Unpremultiplied);
     } else {
       aBuilder.PushRadialGradient(
           wrRect, wrRect, backfaceVisible, toItemVector(aG.mCenter),
           wr::ToLayoutSize(aG.mRadii * cssToDev), aG.mStops, aG.mExtendMode,
-          tileSize, tileSpacing, antialias);
+          tileSize, tileSpacing, antialias, wr::AlphaMode::Unpremultiplied);
     }
   };
 

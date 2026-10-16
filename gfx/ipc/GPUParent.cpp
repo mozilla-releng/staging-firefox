@@ -396,7 +396,7 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
     layers::AndroidHardwareBufferManager::Init();
   }
 
-  if (gfxVars::UseAImageReaderVideoGpuProcessAndroid()) {
+  if (gfxVars::ForceAImageReaderAndroid()) {
     layers::GpuProcessAndroidImageReaderMap::Init();
   }
 

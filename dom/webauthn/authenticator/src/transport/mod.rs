@@ -8,6 +8,9 @@ use crate::ctap2::commands::client_pin::{
     GetPinUvAuthTokenUsingPinWithPermissions, GetPinUvAuthTokenUsingUvWithPermissions,
     PinUvAuthTokenPermission,
 };
+use crate::ctap2::commands::credential_management::{
+    CredentialManagement, CredentialManagementResponse,
+};
 use crate::ctap2::commands::get_assertion::{GetAssertion, GetAssertionResult};
 use crate::ctap2::commands::get_info::{AuthenticatorInfo, AuthenticatorVersion, GetInfo};
 use crate::ctap2::commands::get_version::{GetVersion, U2FInfo};
@@ -21,9 +24,10 @@ use crate::ctap2::preflight::CheckKeyHandle;
 pub use crate::transport::device_selector::BlinkResult;
 use crate::transport::errors::HIDError;
 
-use crate::Pin;
+use crate::{Pin, StatusUpdate};
 use std::convert::TryFrom;
 use std::fmt;
+use std::sync::mpsc::Sender;
 
 pub mod device_selector;
 pub mod errors;
@@ -81,38 +85,62 @@ pub enum FidoProtocol {
     CTAP2,
 }
 
+pub trait CtapVersionSupport {
+    /// `true` if the device supports CTAP1/U2F commands, according to the init message.
+    ///
+    /// Returns `false` if the device has not sent an init message.
+    fn supports_ctap1(&self) -> bool;
+
+    /// `true` if the device supports CTAP2 commands, according to the init message.
+    ///
+    /// Returns `false` if the device has not sent an init message.
+    fn supports_ctap2(&self) -> bool;
+}
+
 pub trait FidoDeviceIO {
     fn send_msg<Out, Req: RequestCtap1<Output = Out> + RequestCtap2<Output = Out>>(
         &mut self,
         msg: &Req,
+        status: Option<&Sender<StatusUpdate>>,
     ) -> Result<Out, HIDError> {
-        self.send_msg_cancellable(msg, &|| true)
+        self.send_msg_cancellable(msg, &|| true, status)
     }
 
-    fn send_cbor<Req: RequestCtap2>(&mut self, msg: &Req) -> Result<Req::Output, HIDError> {
-        self.send_cbor_cancellable(msg, &|| true)
+    fn send_cbor<Req: RequestCtap2>(
+        &mut self,
+        msg: &Req,
+        status: Option<&Sender<StatusUpdate>>,
+    ) -> Result<Req::Output, HIDError> {
+        self.send_cbor_cancellable(msg, &|| true, status)
     }
 
-    fn send_ctap1<Req: RequestCtap1>(&mut self, msg: &Req) -> Result<Req::Output, HIDError> {
-        self.send_ctap1_cancellable(msg, &|| true)
+    fn send_ctap1<Req: RequestCtap1>(
+        &mut self,
+        msg: &Req,
+        status: Option<&Sender<StatusUpdate>>,
+    ) -> Result<Req::Output, HIDError> {
+        self.send_ctap1_cancellable(msg, &|| true, status)
     }
 
     fn send_msg_cancellable<Out, Req: RequestCtap1<Output = Out> + RequestCtap2<Output = Out>>(
         &mut self,
         msg: &Req,
         keep_alive: &dyn Fn() -> bool,
+        status: Option<&Sender<StatusUpdate>>,
     ) -> Result<Out, HIDError>;
 
     fn send_cbor_cancellable<Req: RequestCtap2>(
         &mut self,
         msg: &Req,
         keep_alive: &dyn Fn() -> bool,
+        status: Option<&Sender<StatusUpdate>>,
     ) -> Result<Req::Output, HIDError>;
 
     fn send_ctap1_cancellable<Req: RequestCtap1>(
         &mut self,
         msg: &Req,
         keep_alive: &dyn Fn() -> bool,
+        status: Option<&Sender<StatusUpdate>>,
     ) -> Result<Req::Output, HIDError>;
 }
 
@@ -131,7 +159,7 @@ pub trait TestDevice {
     ) -> Result<Req::Output, HIDError>;
 }
 
-pub trait FidoDevice: FidoDeviceIO
+pub trait FidoDevice: FidoDeviceIO + CtapVersionSupport
 where
     Self: Sized,
     Self: fmt::Debug,
@@ -141,27 +169,36 @@ where
 
     // Check if the device is actually a token
     fn is_u2f(&mut self) -> bool;
-    fn should_try_ctap2(&self) -> bool;
+
+    #[deprecated = "use CtapVersionSupport::supports_ctap2"]
+    fn should_try_ctap2(&self) -> bool {
+        self.supports_ctap2()
+    }
+
     fn get_authenticator_info(&self) -> Option<&AuthenticatorInfo>;
     fn set_authenticator_info(&mut self, authenticator_info: AuthenticatorInfo);
     fn refresh_authenticator_info(&mut self) -> Option<&AuthenticatorInfo> {
         let command = GetInfo::default();
-        if let Ok(info) = self.send_cbor(&command) {
+        if let Ok(info) = self.send_cbor(&command, None) {
             debug!("Refreshed authenticator info: {:?}", info);
             self.set_authenticator_info(info);
         }
         self.get_authenticator_info()
     }
 
-    // `get_protocol()` indicates whether we're using CTAP1 or CTAP2.
-    // Prior to initializing the device, `get_protocol()` should return CTAP2 unless
-    // there's a reason to believe that the device does not support CTAP2 (e.g. if
-    // it's a HID device and it does not have the CBOR capability).
+    /// Indicates whether we're using CTAP1 (U2F) or CTAP2.
+    ///
+    /// Prior to initializing the device, this returns CTAP2. Initialization checks the CBOR
+    /// capability, and automatically downgrades to CTAP1 if that's not supported.
     fn get_protocol(&self) -> FidoProtocol;
 
-    // We do not provide a generic `set_protocol(..)` function as this would have complicated
-    // interactions with the AuthenticatorInfo state.
-    fn downgrade_to_ctap1(&mut self);
+    /// Downgrades the connection to CTAP1/U2F.
+    ///
+    /// Returns [`HIDError::UnexpectedVersion`] if the authenticator does not support CTAP1.
+    ///
+    /// We do not provide a generic `set_protocol(..)` function as this would have complicated
+    /// interactions with the [`AuthenticatorInfo`] state.
+    fn downgrade_to_ctap1(&mut self) -> Result<(), HIDError>;
 
     fn get_shared_secret(&self) -> Option<&SharedSecret>;
     fn set_shared_secret(&mut self, secret: SharedSecret);
@@ -169,23 +206,24 @@ where
     fn init(&mut self) -> Result<(), HIDError> {
         self.pre_init()?;
 
-        if self.should_try_ctap2() {
+        if self.supports_ctap2() {
             let command = GetInfo::default();
-            if let Ok(info) = self.send_cbor(&command) {
+            if let Ok(info) = self.send_cbor(&command, None) {
                 debug!("{:?}", info);
                 if info.max_supported_version() == AuthenticatorVersion::U2F_V2 {
-                    self.downgrade_to_ctap1();
+                    self.downgrade_to_ctap1()?;
                 }
                 self.set_authenticator_info(info);
                 return Ok(());
             }
         }
 
-        self.downgrade_to_ctap1();
+        // If the device sets NMSG, this will fail.
+        self.downgrade_to_ctap1()?;
         // We want to return an error here if this device doesn't support CTAP1,
         // so we send a U2F_VERSION command.
         let command = GetVersion::default();
-        self.send_ctap1(&command)?;
+        self.send_ctap1(&command, None)?;
         Ok(())
     }
 
@@ -196,14 +234,15 @@ where
                 .is_some_and(|i| i.versions.contains(&AuthenticatorVersion::FIDO_2_1));
         let resp = if supports_select_cmd {
             let msg = Selection {};
-            self.send_cbor_cancellable(&msg, keep_alive)
+            self.send_cbor_cancellable(&msg, keep_alive, None)
         } else {
             // We need to fake a blink-request, because FIDO2.0 forgot to specify one
             // See: https://fidoalliance.org/specs/fido-v2.0-ps-20190130/fido-client-to-authenticator-protocol-v2.0-ps-20190130.html#using-pinToken-in-authenticatorMakeCredential
             let msg = dummy_make_credentials_cmd();
             info!("Trying to blink: {:?}", &msg);
             // We don't care about the Ok-value, just if it is Ok or not
-            self.send_msg_cancellable(&msg, keep_alive).map(|_| ())
+            self.send_msg_cancellable(&msg, keep_alive, None)
+                .map(|_| ())
         };
 
         match resp {
@@ -248,7 +287,7 @@ where
         // Not reusing the shared secret here, if it exists, since we might start again
         // with a different PIN (e.g. if the last one was wrong)
         let pin_command = GetKeyAgreement::new(pin_protocol.clone());
-        let resp = self.send_cbor_cancellable(&pin_command, alive)?;
+        let resp = self.send_cbor_cancellable(&pin_command, alive, None)?;
         if let Some(device_key_agreement_key) = resp.key_agreement {
             let shared_secret = pin_protocol
                 .encapsulate(&device_key_agreement_key)
@@ -279,7 +318,7 @@ where
         let shared_secret = self.establish_shared_secret(alive)?;
 
         let pin_command = GetPinToken::new(&shared_secret, pin);
-        let resp = self.send_cbor_cancellable(&pin_command, alive)?;
+        let resp = self.send_cbor_cancellable(&pin_command, alive, None)?;
         if let Some(encrypted_pin_token) = resp.pin_token {
             // CTAP 2.1 spec:
             // If authenticatorClientPIN's getPinToken subcommand is invoked, default permissions
@@ -310,7 +349,7 @@ where
             rp_id.cloned(),
         );
 
-        let resp = self.send_cbor_cancellable(&pin_command, alive)?;
+        let resp = self.send_cbor_cancellable(&pin_command, alive, None)?;
 
         if let Some(encrypted_pin_token) = resp.pin_token {
             let pin_token = shared_secret
@@ -346,7 +385,7 @@ where
             rp_id.cloned(),
         );
 
-        let resp = self.send_cbor_cancellable(&pin_command, alive)?;
+        let resp = self.send_cbor_cancellable(&pin_command, alive, None)?;
 
         if let Some(encrypted_pin_token) = resp.pin_token {
             let pin_token = shared_secret
@@ -370,4 +409,8 @@ pub trait VirtualFidoDevice: FidoDevice {
     fn make_credentials(&self, req: &MakeCredentials) -> Result<MakeCredentialsResult, HIDError>;
     fn reset(&self, req: &Reset) -> Result<(), HIDError>;
     fn selection(&self, req: &Selection) -> Result<(), HIDError>;
+    fn manage_credentials(
+        &mut self,
+        req: &CredentialManagement,
+    ) -> Result<CredentialManagementResponse, HIDError>;
 }

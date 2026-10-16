@@ -124,6 +124,8 @@ class Rule : public nsISupports, public nsWrapperCache, public SupportsWeakPtr {
   };
   ContainingRuleState GetContainingRuleStateForParsing() const;
 
+  bool SupportsDeclarations();
+
  protected:
   // True if we're known-live for cycle collection purposes.
   bool IsKnownLive() const;

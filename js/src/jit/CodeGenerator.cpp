@@ -6769,8 +6769,6 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
     masm.branchTestNull(Assembler::Equal, thisAddr, &vmCall);
   }
 
-  masm.switchToObjectRealm(calleeReg, scratch);
-
   // Load jitCodeRaw for callee if it exists.
   masm.branchIfFunctionHasNoJitEntry(calleeReg, &noJitEntry);
 
@@ -6780,6 +6778,7 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
 
   generateIonGenericHandleUnderflow(masm, isConstructing, &vmCall);
 
+  masm.switchToObjectRealm(calleeReg, scratch);
   masm.loadJitCodeRaw(calleeReg, scratch2);
 
   // Construct the JitFrameLayout.
@@ -7057,6 +7056,9 @@ void JitRuntime::generateIonGenericCallNativeFunction(MacroAssembler& masm,
   // Initialize |NativeExitFrameLayout::savedCallee_|.
   masm.push(calleeReg);
 
+  // Enter the callee's realm. It's kept alive by |savedCallee_|.
+  masm.switchToObjectRealm(calleeReg, scratch);
+
   // Load the callee address into calleeReg.
 #ifdef JS_SIMULATOR
   masm.movePtr(ImmPtr(RedirectedCallAnyNative()), calleeReg);
@@ -7116,6 +7118,12 @@ void JitRuntime::generateIonGenericCallFunCall(MacroAssembler& masm,
   masm.branchPtr(Assembler::NotEqual,
                  Address(calleeReg, JSFunction::offsetOfNativeOrEnv()),
                  ImmPtr(js::fun_call), &notFunCall);
+
+  // Only optimize fun_call for the caller's realm. If |this| is a proxy, the
+  // arguments array passed to the proxy's apply trap must be allocated in
+  // fun_call's realm. We can't enter that realm here because fun_call, which
+  // keeps it alive, is about to be removed from the stack. See bug 2082051.
+  masm.guardObjectHasSameRealm(calleeReg, scratch, vmCall);
 
   // In general, we can implement fun_call by replacing calleeReg with
   // |this|, sliding all the other arguments down, and decrementing argc.

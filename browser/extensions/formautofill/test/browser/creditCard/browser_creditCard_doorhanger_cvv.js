@@ -40,6 +40,11 @@ function descriptionL10nId(content) {
   return content.firstElementChild.getAttribute("data-l10n-id");
 }
 
+add_setup(async function () {
+  // The security code is supported only while the Rust store serves.
+  await switchCreditCardStore({ rust: true });
+});
+
 add_task(async function test_save_doorhanger_before_rollout() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -86,6 +91,32 @@ add_task(async function test_save_doorhanger_when_capture_is_off() {
   });
 
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_save_doorhanger_while_json_store_serves() {
+  await switchCreditCardStore({ rust: false });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [SUPPORTED_PREF, "on"],
+      [ENABLED_PREF, true],
+    ],
+  });
+
+  await withDoorhanger(CC_VALUES, async content => {
+    is(
+      descriptionL10nId(content),
+      "credit-card-save-doorhanger-description",
+      "The doorhanger says the security code won't be saved"
+    );
+    ok(
+      !content.querySelector("moz-checkbox"),
+      "The security codes checkbox is not shown"
+    );
+    await clickDoorhangerButton(SECONDARY_BUTTON);
+  });
+
+  await SpecialPowers.popPrefEnv();
+  await switchCreditCardStore({ rust: true });
 });
 
 add_task(async function test_save_doorhanger_checkbox_toggles_pref() {
@@ -218,10 +249,6 @@ add_task(async function test_save_doorhanger_unchecked_drops_security_code() {
 });
 
 add_task(async function test_update_doorhanger_unchecked_keeps_security_code() {
-  if (RUST_CREDIT_CARD_STORE) {
-    info("The Rust store does not hold a security code");
-    return;
-  }
   await SpecialPowers.pushPrefEnv({
     set: [
       [SUPPORTED_PREF, "on"],
@@ -247,6 +274,9 @@ add_task(async function test_update_doorhanger_unchecked_keeps_security_code() {
     }
   );
 
+  // Unchecking turned CVV off, and storage hides the code from reads until it
+  // is back on.
+  await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
   const creditCards = await getCreditCards();
   is(creditCards.length, 1, "The existing card is updated");
   is(creditCards[0]["cc-name"], "Mark Smith", "The card is updated");
@@ -256,6 +286,7 @@ add_task(async function test_update_doorhanger_unchecked_keeps_security_code() {
     "The stored security code is kept once the checkbox is unchecked"
   );
 
+  await SpecialPowers.popPrefEnv();
   await removeAllRecords();
   await SpecialPowers.popPrefEnv();
 });

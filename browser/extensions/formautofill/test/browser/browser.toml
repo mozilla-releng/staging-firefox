@@ -165,4 +165,6 @@ skip-if = [
 
 ["browser_remoteiframe.js"]
 
+["browser_storage_rust_nimbus.js"]
+
 ["browser_submission_in_private_mode.js"]

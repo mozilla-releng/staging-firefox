@@ -822,6 +822,7 @@ describe("ActivityStream", () => {
       "widgets.stocks.enabled",
       "widgets.recentSearches.enabled",
       "widgets.horoscopes.enabled",
+      "widgets.travel.enabled",
     ];
     beforeEach(() => {
       services.locale.appLocaleAsBCP47 = "en-US";
@@ -968,6 +969,15 @@ describe("ActivityStream", () => {
       as._updateDynamicPrefs();
       expect(PREFS_CONFIG.get("widgets.horoscopes.enabled").value).toBe(false);
       expect(PREFS_CONFIG.get("widgets.system.horoscopes.enabled").value).toBe(
+        false
+      );
+    });
+  });
+  describe("travel widget defaults", () => {
+    it("should be off everywhere by default", () => {
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get("widgets.travel.enabled").value).toBe(false);
+      expect(PREFS_CONFIG.get("widgets.system.travel.enabled").value).toBe(
         false
       );
     });

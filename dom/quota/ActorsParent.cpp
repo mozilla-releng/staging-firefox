@@ -7830,8 +7830,6 @@ void QuotaManager::RegisterDirtyOriginInfo(
     return;
   }
 
-  aProofOfLock.Touch();
-
   auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
   message->data = std::move(originInfo);
   mDirtyOriginInfos.Push(message);

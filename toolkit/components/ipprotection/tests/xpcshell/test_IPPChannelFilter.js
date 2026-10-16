@@ -969,6 +969,73 @@ add_task(async function test_shouldProxy() {
   Services.prefs.clearUserPref(GUARDIAN_PREF);
 });
 
+/**
+ * Tests that the rule_applied counters count top-level loads decided by an
+ * inclusion or by one of the user's exclusions, but not subresources or the
+ * built-in exclusions.
+ */
+add_task(async function test_shouldProxy_records_rule_applied() {
+  do_get_profile();
+  Services.fog.initializeFOG();
+  Services.fog.testResetFOG();
+  IPPSiteRuleManager.init();
+
+  const filter = IPPChannelFilter.create();
+  filter.proxyInfo = {};
+
+  const included = Services.scriptSecurityManager.createContentPrincipal(
+    Services.io.newURI("https://included.example.com"),
+    {}
+  );
+  const excluded = Services.scriptSecurityManager.createContentPrincipal(
+    Services.io.newURI("https://excluded.example.com"),
+    {}
+  );
+  IPPPermissionRules.setRule(included, IPPPrincipalRules.INCLUDED);
+  IPPPermissionRules.setRule(excluded, IPPPrincipalRules.EXCLUDED);
+
+  const makeTopLevelChannel = uri =>
+    NetUtil.newChannel({
+      uri,
+      loadUsingSystemPrincipal: true,
+      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
+    });
+  const makeSubresourceChannel = loadingPrincipal =>
+    NetUtil.newChannel({
+      uri: "https://cdn.example.com/file.bin",
+      loadingPrincipal,
+      securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+      contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+    });
+
+  Assert.ok(
+    filter.shouldProxy(makeTopLevelChannel("https://included.example.com/")),
+    "An included top-level load is proxied"
+  );
+  Assert.ok(
+    !filter.shouldProxy(makeTopLevelChannel("https://excluded.example.com/")),
+    "An excluded top-level load is not proxied"
+  );
+  filter.shouldProxy(makeSubresourceChannel(included));
+  filter.shouldProxy(makeSubresourceChannel(excluded));
+  filter.shouldProxy(makeTopLevelChannel("http://localhost/"));
+  filter.shouldProxy(makeTopLevelChannel("https://other.example.com/"));
+
+  Assert.equal(
+    Glean.ipprotectionInclusions.ruleApplied.testGetValue(),
+    1,
+    "Only the top-level inclusion is counted"
+  );
+  Assert.equal(
+    Glean.ipprotectionExclusions.ruleApplied.testGetValue(),
+    1,
+    "Only the top-level user exclusion is counted"
+  );
+
+  IPPSiteRuleManager.uninit();
+  Services.perms.removeByType("ipp-vpn");
+});
+
 add_task(async function test_shouldProxy_trr_service_channel() {
   const filter = IPPChannelFilter.create();
   filter.proxyInfo = {};

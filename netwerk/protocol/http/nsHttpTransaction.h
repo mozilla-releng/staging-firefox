@@ -570,10 +570,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mReportedStart{false};
   bool mReportedResponseHeader{false};
 
-  // protected by nsHttp::GetLock()
-  bool mResponseHeadTaken{false};
-  UniquePtr<nsHttpHeaderArray> mForTakeResponseTrailers;
-  bool mResponseTrailersTaken{false};
+  // protected by mLock
+  bool mResponseHeadTaken MOZ_GUARDED_BY(mLock){false};
+  UniquePtr<nsHttpHeaderArray> mForTakeResponseTrailers MOZ_GUARDED_BY(mLock);
+  bool mResponseTrailersTaken MOZ_GUARDED_BY(mLock){false};
 
   // Set when this transaction was restarted by call to Restart().  Used to tell
   // the http channel to reset proxy authentication.
@@ -641,6 +641,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   }
   // Called when this transaction is inserted in the pending queue.
   void OnPendingQueueInserted(const nsACString& aConnectionHashKey);
+  // Starts the timer that opens a TCP backup connection if this HTTP/3
+  // transaction is not connected in time. Only the first call has an effect.
+  void MaybeStartHttp3BackupTimer();
 
  private:
   TransactionObserverFunc mTransactionObserver;

@@ -1820,17 +1820,19 @@ export class AITab {
   }
 
   /**
-   * Turn a title into a lowercase snake_case slug.
+   * Turn a title into a lowercase kebab-case slug.
    *
    * @param {string} title
    * @returns {string}
    */
   static #slugify(title) {
     const slug = title
+      .slice(0, 60)
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 60);
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
     // A title with no ASCII alphanumerics at all (e.g. one written in Japanese)
     // slugs to the empty string, which is not a usable identifier.
     return slug || "aitab";

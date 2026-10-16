@@ -209,6 +209,8 @@ skip-if = [
 
 ["test_menu_mouse_menuactive.xhtml"]
 
+["test_menu_typeahead_label_start.xhtml"]
+
 ["test_menu_withcapture.xhtml"]
 
 ["test_menuchecks.xhtml"]

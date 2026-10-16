@@ -13,7 +13,9 @@
 toolchain:
     - 7zz
     - gn
+    - libdmg
     - nasm
+    - node-24
     - pkgconf
     - upx
     - winchecksec

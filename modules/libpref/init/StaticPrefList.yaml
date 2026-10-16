@@ -2118,7 +2118,7 @@
 # request. Read from C++ on the load and history paths, so it is static.
 - name: browser.smartwindow.aitab.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Whether to show an about:blank window as early as possible for quick startup feedback.
@@ -3494,6 +3494,12 @@
   value: true
   mirror: always
 
+# Whether links perform same document fragment navigations synchronously
+- name: dom.links.sync_fragment_navigation
+  type: bool
+  value: true
+  mirror: always
+
 # Enable indexedDB in private browsing mode with encryption
 - name: dom.indexedDB.privateBrowsing.enabled
   type: RelaxedAtomicBool
@@ -4345,6 +4351,13 @@
 - name: dom.push.window_pushmanager.enabled
   type: bool
   value: false
+  mirror: always
+
+# Whether QuotaExceededError is a DOMException derived interface carrying
+# `quota` and `requested`, rather than a plain DOMException.
+- name: dom.quota_exceeded_error.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Preference that is primarily used for testing of problematic file paths.
@@ -6702,11 +6715,6 @@
   value: false
   mirror: always
 
-- name: extensions.web_accessible_workers.deprecated_behavior
-  type: bool
-  value: false
-  mirror: always
-
 # Whether the InstallTrigger global should be enabled (kept for compatibility,
 # as it is still used in the wild as an improper UA detection method)
 - name: extensions.InstallTrigger.enabled
@@ -7534,6 +7542,12 @@
   value: false
   mirror: always
 
+# Support for partial colorspace handling in Canvas
+- name: gfx.canvas.colorspace.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 - name: gfx.canvas.max-size
   type: RelaxedAtomicInt32
   value: 0xffff
@@ -8231,14 +8245,6 @@
   mirror: once
 #endif
 
-#ifdef MOZ_WIDGET_ANDROID
-# Use SurfaceTextures as preferred backend for TextureClient/Host.
-- name: gfx.use-surfacetexture-textures
-  type: bool
-  value: false
-  mirror: once
-#endif
-
 - name: gfx.vsync.compositor.unobserve-count
   type: int32_t
   value: 10
@@ -8793,7 +8799,7 @@
 #endif
 
 #if defined(MOZ_WIDGET_ANDROID)
-- name: gfx.video.aimage-reader-gpu-process-android
+- name: gfx.video.force-aimage-reader-android
   type: bool
   value: false
   mirror: once
@@ -10894,6 +10900,13 @@
   value: false
   mirror: always
 
+# Whether transitions override ua !important declarations.
+- name: layout.css.transitions-override-ua
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
 # Whether to enable CSS tree-counting functions (sibling-index(), sibling-count()).
 # https://drafts.csswg.org/css-values-5/#tree-counting
 - name: layout.css.tree-counting-functions.enabled
@@ -12012,12 +12025,6 @@
   mirror: always
   rust: true
 
-# Is support for -webkit-line-clamp on regular blocks enabled?
-- name: layout.css.webkit-line-clamp.block.enabled
-  type: bool
-  value: false
-  mirror: always
-
 # TODO(Bug 1540681): Merge with the prefixed version.
 # Is support for the unprefixed 'line-clamp' property enabled?
 - name: layout.css.line-clamp.enabled
@@ -12030,7 +12037,7 @@
 # See bug 1934547.
 - name: layout.css.webkit-line-clamp.skip-paint
   type: bool
-  value: false
+  value: true
   mirror: always
 
 # Whether we refer ::-webkit-scrollbar's width/height properties to disable
@@ -12433,6 +12440,12 @@
   type: RelaxedAtomicUint32
   mirror: always
   value: 0
+
+# Enable lazy loading for media elements (video and audio)
+- name: media.lazy_loading.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
 
 # If a resource is known to be smaller than this size (in kilobytes), a
 # memory-backed MediaCache may be used; otherwise the (single shared global)
@@ -17319,6 +17332,13 @@
   value: 10
   mirror: always
 
+# Validate that the principal used to bind child-written alt-data could have
+# been loaded by the content process that wrote it.
+- name: network.cache.alt_data.validate_binding_principal
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 - name: network.cache.persist_permanent_redirects_http
   type: bool
   value: false
@@ -17586,6 +17606,7 @@
   type: RelaxedAtomicBool
   value: false
   mirror: always
+  rust: true
 
 # When true, the socket transport service will have an additional queue for
 # runnables with increased priority.
@@ -18023,14 +18044,6 @@
   value: 2
   mirror: always
 
-#ifdef XP_MACOSX
-# Whether we should use skpdf for all print destinations on macOS.
-- name: print.skpdf.all-destinations
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-#endif
-
 # Encoding quality for images. 101 means lossless, otherwise they get
 # jpeg-encoded with a particular quality.
 - name: print.skpdf.image-encoding-quality
@@ -18121,7 +18134,7 @@
 
 # Annotate channels based on the tracking protection list in all modes
 - name: privacy.trackingprotection.annotate_channels
-  type: bool
+  type: RelaxedAtomicBool
   value: true
   mirror: always
 
@@ -20633,11 +20646,6 @@
   value: true
   mirror: always
 
-- name: webgl.enable-surface-texture
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
 - name: webgl.enable-webgl2
   type: RelaxedAtomicBool
   value: true
@@ -21613,6 +21621,12 @@
 
 # Whether to disable SwipeTracker (e.g. swipe-to-nav).
 - name: widget.disable-swipe-tracker
+  type: bool
+  value: false
+  mirror: always
+
+# Whether to provide haptic feedback when crossing the swipe navigation threshold.
+- name: widget.swipe.haptic-feedback.enabled
   type: bool
   value: false
   mirror: always

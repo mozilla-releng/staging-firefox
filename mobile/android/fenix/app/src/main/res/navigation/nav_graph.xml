@@ -213,6 +213,11 @@
         android:id="@+id/action_global_protections_dashboard"
         app:destination="@+id/global_protections_dashboard"/>
 
+    <action
+        android:id="@+id/action_global_pairFragment"
+        app:destination="@+id/pairFragment"
+        app:launchSingleTop="true"/>
+
     <fragment
         android:id="@+id/tabManagementFragment"
         android:name="org.mozilla.fenix.tabstray.ui.TabManagementFragment">
@@ -468,6 +473,10 @@
                 android:defaultValue="@null"
                 app:argType="string"
                 app:nullable="true" />
+            <argument
+                android:name="isSandboxCustomTab"
+                android:defaultValue="false"
+                app:argType="boolean" />
         </action>
     </fragment>
 
@@ -1858,6 +1867,10 @@
       android:defaultValue="@null"
       app:nullable="true"
       app:argType="string" />
+    <argument
+      android:name="isSandboxCustomTab"
+      android:defaultValue="false"
+      app:argType="boolean" />
 
     <dialog
       android:id="@+id/menuFragment"
@@ -1870,6 +1883,10 @@
         android:defaultValue="@null"
         app:argType="string"
         app:nullable="true" />
+      <argument
+        android:name="isSandboxCustomTab"
+        android:defaultValue="false"
+        app:argType="boolean" />
 
       <action
         android:id="@+id/action_menuFragment_to_translationsDialogFragment"
@@ -1890,6 +1907,13 @@
       <action
         android:id="@+id/action_menuFragment_to_loginsListFragment"
         app:destination="@id/savedLogins" />
+
+      <action
+        android:id="@+id/action_menuFragment_to_storiesFragment"
+        app:destination="@id/storiesFragment"
+        app:popUpTo="@id/storiesFragment"
+        app:popUpToInclusive="false"
+        app:launchSingleTop="true" />
     </dialog>
   </navigation>
 

@@ -317,6 +317,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   void MaybeResolveProxyAndBeginConnect();
   void MaybeStartDNSPrefetch();
 
+  // Whether the browsing context this load is performed by, or associated
+  // with, is forced offline (BrowsingContext.forceOffline).
+  bool IsForcedOffline() const;
+
   // Based on the proxy configuration determine the strategy for resolving the
   // end server host name.
   nsIHttpChannelInternal::ProxyDNSStrategy ComputeProxyDNSStrategy();

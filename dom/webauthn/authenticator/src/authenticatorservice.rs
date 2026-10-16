@@ -11,9 +11,10 @@ use crate::ctap2::server::{
 use crate::errors::*;
 use crate::manager::Manager;
 use crate::statecallback::StateCallback;
+use serde::Serialize;
 use std::sync::{mpsc::Sender, Arc, Mutex};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RegisterArgs {
     pub client_data_hash: [u8; 32],
     pub relying_party: RelyingParty,
@@ -25,10 +26,19 @@ pub struct RegisterArgs {
     pub resident_key_req: ResidentKeyRequirement,
     pub extensions: AuthenticationExtensionsClientInputs,
     pub pin: Option<Pin>,
+
+    /// Register the credential using CTAP1/U2F only.
+    ///
+    /// The request [must be compatible with CTAP1 authenticators][0].
+    ///
+    /// When `true`, the library will automatically skip authenticators that don't
+    /// [support CTAP1][crate::CtapVersionSupport::supports_ctap1].
+    ///
+    /// [0]: https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html#u2f-authenticatorMakeCredential-interoperability
     pub use_ctap1_fallback: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SignArgs {
     pub client_data_hash: [u8; 32],
     pub origin: String,
@@ -38,6 +48,15 @@ pub struct SignArgs {
     pub user_presence_req: bool,
     pub extensions: AuthenticationExtensionsClientInputs,
     pub pin: Option<Pin>,
+
+    /// Authenticate using CTAP1/U2F only.
+    ///
+    /// The request [must be compatible with CTAP1 authenticators][0].
+    ///
+    /// When `true`, the library will automatically skip authenticators that don't
+    /// [support CTAP1][crate::CtapVersionSupport::supports_ctap1].
+    ///
+    /// [0]: https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html#u2f-authenticatorGetAssertion-interoperability
     pub use_ctap1_fallback: bool,
 }
 

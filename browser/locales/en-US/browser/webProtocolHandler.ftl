@@ -13,6 +13,13 @@ protocolhandler-add-handler-button =
 protocolhandler-mailto-os-handler-yes-button = Set as default
 protocolhandler-mailto-os-handler-no-button = Not now
 
+# Button in the notification bar shown when a website asks to register as an
+# application handler, for example for email links. Blocks the website from
+# asking again.
+protocolhandler-never-allow-button =
+    .label = Never allow
+    .accesskey = N
+
 ## Variables:
 ##  $url (String): The url of a webmailer, but only its full domain name.
 

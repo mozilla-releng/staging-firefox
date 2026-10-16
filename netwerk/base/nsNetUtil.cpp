@@ -20,7 +20,6 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_urlclassifier.h"
@@ -2287,8 +2286,7 @@ bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport) {
     return true;
   }
 
-  if (!StaticPrefs::extensions_web_accessible_workers_deprecated_behavior() &&
-      uri->SchemeIs("moz-extension")) {
+  if (uri->SchemeIs("moz-extension")) {
     nsContentPolicyType internalContentType =
         loadInfo->InternalContentPolicyType();
 

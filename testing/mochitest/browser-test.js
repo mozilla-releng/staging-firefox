@@ -518,7 +518,6 @@ Tester.prototype = {
       "constructor",
       "top",
       "Application",
-      "__SS_tabsToRestore",
       "webConsoleCommandController",
       // Thunderbird
       "MailMigrator",

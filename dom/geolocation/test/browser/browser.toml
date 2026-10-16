@@ -17,3 +17,7 @@ tags = "geolocation"
 
 ["browser_geolocation_override.js"]
 support-files = ["!/dom/tests/browser/file_empty.html"]
+
+["browser_geolocation_override_no_device.js"]
+support-files = ["!/dom/tests/browser/file_empty.html"]
+tags = "geolocation"

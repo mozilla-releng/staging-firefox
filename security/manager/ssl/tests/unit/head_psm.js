@@ -742,6 +742,19 @@ function _getBinaryUtil(binaryUtilName) {
   return utilBin;
 }
 
+// The test servers and GenerateOCSPResponse create an NSS database in the
+// certificate directory they are given, so give them a per-test copy.
+function getCertDirCopy(certsPath) {
+  let certDir = do_get_file(certsPath);
+  let copy = do_get_tempdir();
+  copy.append(certDir.leafName);
+  // The server, GenerateOCSPResponse and certutil calls of a test share a copy.
+  if (!copy.exists()) {
+    certDir.copyTo(copy.parent, null);
+  }
+  return copy;
+}
+
 async function asyncStartTLSTestServer(
   serverBinName,
   certsPath,
@@ -785,9 +798,7 @@ async function asyncStartTLSTestServer(
   let serverBin = _getBinaryUtil(serverBinName);
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
   process.init(serverBin);
-  let certDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
-  certDir.append(`${certsPath}`);
-  Assert.ok(certDir.exists(), `certificate folder (${certsPath}) should exist`);
+  let certDir = getCertDirCopy(certsPath);
   // Using "sql:" causes the SQL DB to be used so we can run tests on Android.
   process.run(false, ["sql:" + certDir.path, Services.appinfo.processID], 2);
 
@@ -805,14 +816,16 @@ async function asyncStartTLSTestServer(
 function generateOCSPResponses(ocspRespArray, nssDBlocation) {
   let utilBinName = "GenerateOCSPResponse";
   let ocspGenBin = _getBinaryUtil(utilBinName);
+  let nssDBDir = getCertDirCopy(nssDBlocation);
   let retArray = [];
 
   for (let i = 0; i < ocspRespArray.length; i++) {
     let argArray = [];
-    let ocspFilepre = do_get_file(i.toString() + ".ocsp", true);
-    let filename = ocspFilepre.path;
+    let ocspFile = do_get_tempdir();
+    ocspFile.append(i.toString() + ".ocsp");
+    let filename = ocspFile.path;
     // Using "sql:" causes the SQL DB to be used so we can run tests on Android.
-    argArray.push("sql:" + nssDBlocation);
+    argArray.push("sql:" + nssDBDir.path);
     argArray.push(ocspRespArray[i][0]); // ocsRespType;
     argArray.push(ocspRespArray[i][1]); // nick;
     argArray.push(ocspRespArray[i][2]); // extranickname
@@ -826,7 +839,6 @@ function generateOCSPResponses(ocspRespArray, nssDBlocation) {
     process.init(ocspGenBin);
     process.run(true, argArray, argArray.length);
     Assert.equal(0, process.exitValue, "Process exit value should be 0");
-    let ocspFile = do_get_file(i.toString() + ".ocsp", false);
     retArray.push(readFile(ocspFile));
     ocspFile.remove(false);
   }

@@ -436,9 +436,6 @@ run-if = [
 ]
 
 ["test_ext_l10n.js"]
-skip-if = [
-  "isolated_process", # Bug 1709961
-]
 
 ["test_ext_localStorage.js"]
 
@@ -858,6 +855,8 @@ skip-if = [
 ]
 
 ["test_ext_webRequest_redirect_mozextension.js"]
+
+["test_ext_webRequest_redirect_resource_timing.js"]
 
 ["test_ext_webRequest_requestSize.js"]
 

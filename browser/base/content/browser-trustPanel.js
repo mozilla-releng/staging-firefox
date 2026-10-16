@@ -172,6 +172,11 @@ const SMARTBLOCK_EMBED_INFO = [
     shimId: "DisqusEmbed",
     displayName: "Disqus",
   },
+  {
+    matchPatterns: ["https://*.sendtonews.com/*"],
+    shimId: "SendToNewsEmbed",
+    displayName: "STN Video",
+  },
 ];
 
 class TrustPanel {

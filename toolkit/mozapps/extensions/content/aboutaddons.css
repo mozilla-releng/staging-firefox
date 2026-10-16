@@ -448,7 +448,6 @@ theme-preview {
   background-image: url("chrome://global/skin/icons/trophy.svg");
   background-size: 14px;
   /* This color will be removed once the icons are updated for Nova. */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens */
   fill: #ff9400;
 }
 

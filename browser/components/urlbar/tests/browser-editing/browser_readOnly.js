@@ -4,16 +4,21 @@
 "use strict";
 
 add_setup(async function () {
-  // Tests get no default Top Sites, and the view is opened on an empty string
-  // here, which would otherwise leave it closed with no results.
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
+  // The view is opened on an empty string here, which would otherwise leave it
+  // closed with no results.
+  let provider = new UrlbarTestUtils.TestProvider({
+    results: [
+      new UrlbarResult({
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
+        payload: { url: "https://example.com/" },
+      }),
     ],
+    priority: Infinity,
   });
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
+  registerCleanupFunction(() => providersManager.unregisterProvider(provider));
 });
 
 add_task(async function toggle_readOnly() {

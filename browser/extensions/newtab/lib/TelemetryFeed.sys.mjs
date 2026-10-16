@@ -23,6 +23,7 @@ import {
 } from "resource://newtab/common/Actions.mjs";
 import {
   WIDGET_REGISTRY,
+  getWidgets,
   isWidgetEnabled,
 } from "resource://newtab/common/WidgetsRegistry.mjs";
 import { resolvePageLayoutVariant } from "resource://newtab/common/PageLayoutVariants.mjs";
@@ -245,6 +246,17 @@ const WALLPAPER_USER_EVENTS = new Set([
 export class TelemetryFeed {
   /** @type {Store} */
   store = null;
+
+  /**
+   * Lazy getters for the sponsored stories and top sites prefs replace these in
+   * the constructor.
+   *
+   * @type {boolean}
+   */
+  SHOW_SPONSORED_STORIES_ENABLED;
+
+  /** @type {boolean} */
+  SHOW_SPONSORED_TOPSITES_ENABLED;
 
   /**
    * Queue for telemetry events when in NormalGleanSession mode.
@@ -512,7 +524,7 @@ export class TelemetryFeed {
    *  decide which events a given session drains; it is never recorded, and in
    *  particular is kept out of eventData, which is the newtab-content payload
    *  and deliberately carries no visit id.
-   * @param {Function} callback - Function to record to non-private newtab ping
+   * @param {Function} [callback] - Function to record to non-private newtab ping
    *  Called immediately if in PrivateGleanSession, otherwise its added to eventBuffer
    *  and called when the eventBuffer is cleared. The return value is ignored.
    */
@@ -644,8 +656,8 @@ export class TelemetryFeed {
       );
       // sort from most recently followed to oldest. If followedAt is falsey, treat it as the oldest
       followed.sort((a, b) => {
-        const aDate = a[1].followedAt ? new Date(a[1].followedAt) : 0;
-        const bDate = b[1].followedAt ? new Date(b[1].followedAt) : 0;
+        const aDate = a[1].followedAt ? new Date(a[1].followedAt).getTime() : 0;
+        const bDate = b[1].followedAt ? new Date(b[1].followedAt).getTime() : 0;
         return bDate - aDate;
       });
 
@@ -909,7 +921,7 @@ export class TelemetryFeed {
    * The frontmost window, or null if Firefox is not the active application.
    * Separate from isDwellTargetInForeground so tests can stub it.
    *
-   * @returns {Window|null}
+   * @returns {mozIDOMWindowProxy|null}
    */
   getActiveChromeWindow() {
     return Services.focus.activeWindow;
@@ -933,7 +945,7 @@ export class TelemetryFeed {
    * a newtab session stops qualifying.
    *
    * @param  {object} target a newtab session or an entry of this.#openedPages
-   * @param  {Window|null} [activeWindow] the frontmost window, read if omitted
+   * @param  {mozIDOMWindowProxy|null} [activeWindow] the frontmost window, read if omitted
    * @returns {boolean}
    */
   isDwellTargetInForeground(
@@ -2192,6 +2204,9 @@ export class TelemetryFeed {
           this.recordEnabledWidgets();
         }
         break;
+      case at.WIDGETS_EXTENSIONS_UPDATE:
+        this.recordEnabledWidgets();
+        break;
     }
   }
 
@@ -2337,15 +2352,16 @@ export class TelemetryFeed {
   }
 
   recordEnabledWidgets() {
-    const prefs = this.store?.getState()?.Prefs.values;
+    const state = this.store?.getState();
+    const prefs = state?.Prefs.values;
     if (!prefs) {
       return;
     }
     const widgetsEnabled = prefs["widgets.enabled"];
     Glean.newtab.widgetsEnabledList.set(
-      WIDGET_REGISTRY.filter(w =>
-        isWidgetEnabled(w, prefs, widgetsEnabled)
-      ).map(w => w.telemetryName)
+      getWidgets(WIDGET_REGISTRY, state.ExtensionWidgets)
+        .filter(w => isWidgetEnabled(w, prefs, widgetsEnabled))
+        .map(w => w.telemetryName)
     );
   }
 
@@ -2656,13 +2672,13 @@ export class TelemetryFeed {
     if (session) {
       switch (action.type) {
         case "INLINE_SELECTION_CLICK": {
-          const { topic, section_position, position, is_followed } =
+          const { topic, section_position, topic_position, is_followed } =
             action.data;
           Glean.newtab.inlineSelectionClick.record({
             newtab_visit_id: session.session_id,
             topic,
             section_position,
-            position,
+            topic_position,
             is_followed,
           });
           break;

@@ -97,11 +97,11 @@ void APZCTreeManagerChild::NotifyApzAwareListenerAdded(
   }
 }
 
-APZBridge* APZCTreeManagerChild::Bridge() {
+RefPtr<APZBridge> APZCTreeManagerChild::Bridge() {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(mBridge);
 
-  return mBridge.get();
+  return mBridge;
 }
 
 }  // namespace layers

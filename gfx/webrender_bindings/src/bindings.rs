@@ -4313,7 +4313,7 @@ pub extern "C" fn wr_dp_push_border_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_gradient(start_point, end_point, stops_vector, extend_mode);
+            .create_gradient(start_point, end_point, stops_vector, extend_mode, AlphaMode::Premultiplied);
 
     let border_details = BorderDetails::NinePatch(NinePatchBorder {
         source: NinePatchBorderSource::Gradient(gradient),
@@ -4371,7 +4371,7 @@ pub extern "C" fn wr_dp_push_border_radial_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_radial_gradient(center, radius, stops_vector, extend_mode);
+            .create_radial_gradient(center, radius, stops_vector, extend_mode, AlphaMode::Premultiplied);
 
     let border_details = BorderDetails::NinePatch(NinePatchBorder {
         source: NinePatchBorderSource::RadialGradient(gradient),
@@ -4429,7 +4429,7 @@ pub extern "C" fn wr_dp_push_border_conic_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_conic_gradient(center, angle, stops_vector, extend_mode);
+            .create_conic_gradient(center, angle, stops_vector, extend_mode, AlphaMode::Premultiplied);
 
     let border_details = BorderDetails::NinePatch(NinePatchBorder {
         source: NinePatchBorderSource::ConicGradient(gradient),
@@ -4469,6 +4469,7 @@ pub extern "C" fn wr_dp_push_linear_gradient(
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
+    alpha_mode: AlphaMode,
     tile_size: LayoutSize,
     tile_spacing: LayoutSize,
 ) {
@@ -4481,7 +4482,7 @@ pub extern "C" fn wr_dp_push_linear_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_gradient(start, end, stops_vector, extend_mode);
+            .create_gradient(start, end, stops_vector, extend_mode, alpha_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
@@ -4514,6 +4515,7 @@ pub extern "C" fn wr_dp_push_radial_gradient(
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
+    alpha_mode: AlphaMode,
     tile_size: LayoutSize,
     tile_spacing: LayoutSize,
 ) {
@@ -4526,7 +4528,7 @@ pub extern "C" fn wr_dp_push_radial_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_radial_gradient(center, radius, stops_vector, extend_mode);
+            .create_radial_gradient(center, radius, stops_vector, extend_mode, alpha_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
@@ -4562,6 +4564,7 @@ pub extern "C" fn wr_dp_push_conic_gradient(
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
+    alpha_mode: AlphaMode,
     tile_size: LayoutSize,
     tile_spacing: LayoutSize,
 ) {
@@ -4574,7 +4577,7 @@ pub extern "C" fn wr_dp_push_conic_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_conic_gradient(center, angle, stops_vector, extend_mode);
+            .create_conic_gradient(center, angle, stops_vector, extend_mode, alpha_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 

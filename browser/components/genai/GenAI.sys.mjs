@@ -16,12 +16,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   ContentAnalysisUtils: "resource://gre/modules/ContentAnalysisUtils.sys.mjs",
+  E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrefUtils: "moz-src:///toolkit/modules/PrefUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SidebarManager:
     "moz-src:///browser/components/sidebar/SidebarManager.sys.mjs",
 });
@@ -129,6 +131,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "highlightToSearchEnabled",
   "browser.highlightToSearch.enabled"
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "highlightToSearchSearchEnabled",
+  "browser.highlightToSearch.search.enabled",
+  null,
+  (_pref, _old, val) => Glean.selectionMenu.searchEnabled.set(val)
 );
 XPCOMUtils.defineLazyPreferenceGetter(lazy, "sidebarRevamp", "sidebar.revamp");
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -326,7 +335,7 @@ export const GenAI = {
     return (
       lazy.highlightToSearchFeatureGate &&
       lazy.highlightToSearchEnabled &&
-      this.canShowAIAction
+      (this.canShowAIAction || lazy.highlightToSearchSearchEnabled)
     );
   },
 
@@ -413,6 +422,7 @@ export const GenAI = {
     Glean.genaiChatbot.shortcuts.set(lazy.chatShortcuts);
     Glean.genaiChatbot.shortcutsCustom.set(lazy.chatShortcutsCustom);
     Glean.genaiChatbot.sidebar.set(lazy.chatSidebar);
+    Glean.selectionMenu.searchEnabled.set(lazy.highlightToSearchSearchEnabled);
   },
 
   /**
@@ -513,6 +523,8 @@ export const GenAI = {
       return collapsed.substring(0, truncLength) + Services.locale.ellipsis;
     };
 
+    // Returns whether the action ends up visible, so callers can tell whether
+    // the menu has anything to offer.
     panel.setSearchButtonLabel = (selection, browser) => {
       // The default engine getters throw rather than return null until the
       // search service has initialized, and throwing here would stop the panel
@@ -523,12 +535,15 @@ export const GenAI = {
           ? lazy.SearchService.defaultPrivateEngine
           : lazy.SearchService.defaultEngine;
       }
-      if (!engine) {
-        searchActionButton.hidden = true;
-        return;
+      const canShow =
+        !!engine &&
+        lazy.highlightToSearchFeatureGate &&
+        lazy.highlightToSearchEnabled &&
+        lazy.highlightToSearchSearchEnabled;
+      searchActionButton.hidden = !canShow;
+      if (!canShow) {
+        return false;
       }
-      // No matching unhide: the action stays hidden until bug 2069167 gives it
-      // behavior, so showing it here would offer a control that does nothing.
       document.l10n.setAttributes(
         searchActionButton,
         "genai-shortcut-search-button",
@@ -537,7 +552,27 @@ export const GenAI = {
           selection: truncateSelection(selection),
         }
       );
+      return true;
     };
+
+    searchActionButton.addEventListener("click", () => {
+      const { selection, principal, policyContainer } = panel.selectionData;
+      lazy.SearchUIUtils.loadSearch({
+        window: document.defaultView,
+        searchText: selection,
+        where: "tab",
+        triggeringPrincipal: principal,
+        policyContainer:
+          lazy.E10SUtils.deserializePolicyContainer(policyContainer),
+        sapSource: "text_selection",
+      });
+      Glean.selectionMenu.actionClick.record({
+        action: "search",
+        selection: selection.length,
+        smart_window: lazy.AIWindow.isAIWindowActive(document.defaultView),
+      });
+      panel.hide();
+    });
     const buttonActiveState = "icon";
     const buttonDefaultState = "icon ghost";
     const chatShortcutsOptionsPanel = document.getElementById(
@@ -804,7 +839,26 @@ export const GenAI = {
       case "GenAI:ShowShortcuts": {
         // Save the latest selection so it can be used by popup
         shortcutPanel.selectionData = data;
-        shortcutPanel.setSearchButtonLabel(data.selection, browser);
+
+        // Smart Window has its own separate gate above and only ever offers
+        // the AI action; don't let the Search action leak in there, and don't
+        // touch the AI button's visibility on that path either.
+        if (!isSmartWindow) {
+          const aiActionButton =
+            shortcutPanel.querySelector("#ai-action-button");
+          const aiVisible = this.canShowAIAction;
+          aiActionButton.hidden = !aiVisible;
+          const searchVisible = shortcutPanel.setSearchButtonLabel(
+            data.selection,
+            browser
+          );
+          if (!aiVisible && !searchVisible) {
+            // Nothing to offer: don't open an empty menu or log an impression
+            // of one, and close any menu left from the previous selection.
+            shortcutPanel.hide();
+            return;
+          }
+        }
 
         // Clear any CSS hide from a prior selectionchange so the panel
         // is visible when it opens for the new selection.

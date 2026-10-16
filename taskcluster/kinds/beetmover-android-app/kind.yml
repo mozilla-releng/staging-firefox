@@ -17,9 +17,6 @@ kind-dependencies:
     # The unsigned build uploads the SBOM.
     - build-apk
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     beetmover:
         from-deps:

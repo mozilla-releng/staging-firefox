@@ -591,10 +591,6 @@ Used by source tests to support chunking and specify a total amount of chunks.
 Used to generate several tasks from a task, using the substitution given in the
 matrix.
 
-## dxc-crash-symbols
-
-Indicates that the job produces crash symbols for `dxcompiler.dll`.
-
 ## flatpak_name
 
 name of the built flatpak app (e.g. `org.mozilla.firefox`)

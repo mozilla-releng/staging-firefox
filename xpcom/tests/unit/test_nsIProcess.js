@@ -166,7 +166,11 @@ function test_notify_killed() {
     },
   });
 
-  process.kill();
+  // Give a helper that does not block a chance to exit before it is killed.
+  do_timeout(500, () => {
+    Assert.ok(process.isRunning, "TestBlockingProcess should block");
+    process.kill();
+  });
 }
 
 function run_test() {

@@ -40,6 +40,7 @@ export class SidebarTabList extends FxviewTabListBase {
       reflect: true,
       attribute: "inactive-window",
     },
+    rowsDraggable: { type: Boolean },
   };
 
   /**
@@ -133,6 +134,7 @@ export class SidebarTabList extends FxviewTabListBase {
         .closeRequested=${tabItem.closeRequested}
         .containerObj=${tabItem.containerObj}
         .dateTimeFormat=${this.dateTimeFormat}
+        draggable=${!!this.rowsDraggable}
         .fxaDeviceId=${ifDefined(tabItem.fxaDeviceId)}
         .favicon=${tabItem.icon}
         .guid=${tabItem.guid}

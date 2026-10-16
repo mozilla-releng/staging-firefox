@@ -27,6 +27,7 @@ ChromeUtils.defineESModuleGetters(this, {
   TelemetryController: "resource://gre/modules/TelemetryController.sys.mjs",
   TelemetryFeed: "resource://newtab/lib/TelemetryFeed.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
+  WIDGET_REGISTRY: "resource://newtab/common/WidgetsRegistry.mjs",
 });
 
 const FAKE_UUID = "{foo-123-foo}";
@@ -2175,6 +2176,33 @@ add_task(
   }
 );
 
+add_task(async function test_handleInlineSelectionUserEvent_topic_position() {
+  info(
+    "TelemetryFeed.handleInlineSelectionUserEvent should record the " +
+      "topic_position that InterestPicker sends"
+  );
+
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  Services.fog.testResetFOG();
+  sandbox.stub(instance.sessions, "get").returns({ session_id: "decafc0ffee" });
+
+  instance.handleInlineSelectionUserEvent({
+    type: "INLINE_SELECTION_CLICK",
+    data: {
+      topic: "sports",
+      section_position: 2,
+      topic_position: 3,
+      is_followed: true,
+    },
+  });
+
+  const [event] = Glean.newtab.inlineSelectionClick.testGetValue();
+  Assert.equal(event.extra.topic_position, "3", "topic_position is recorded");
+
+  sandbox.restore();
+});
+
 add_task(
   async function test_handleTopSitesOrganicImpressionStats_no_recording() {
     info(
@@ -3992,6 +4020,63 @@ add_task(async function test_recordEnabledWidgets_excludes_no_history() {
     ["lists"],
     "privacy drops out once the profile records no history"
   );
+});
+
+add_task(async function test_recordEnabledWidgets_extension_widgets() {
+  info(
+    "recordEnabledWidgets should list an extension widget only while ExtensionWidgets has its extension"
+  );
+  Services.fog.testResetFOG();
+
+  const extensionWidget = {
+    id: "extensionWidget",
+    telemetryName: "extension_widget",
+    enabledPref: "widgets.extensionWidget.enabled",
+    systemEnabledPref: "widgets.system.extensionWidget.enabled",
+    extensionID: "fixture-widget@mozilla.org",
+  };
+  WIDGET_REGISTRY.push(extensionWidget);
+
+  const state = {
+    Prefs: {
+      values: {
+        "widgets.enabled": true,
+        "widgets.lists.enabled": true,
+        "widgets.system.lists.enabled": true,
+        "widgets.extensionWidget.enabled": true,
+        "widgets.system.extensionWidget.enabled": true,
+      },
+    },
+    ExtensionWidgets: {},
+  };
+
+  let instance = new TelemetryFeed();
+  instance.store = { getState: () => state };
+
+  try {
+    instance.recordEnabledWidgets();
+    Assert.deepEqual(
+      Glean.newtab.widgetsEnabledList.testGetValue(),
+      ["lists"],
+      "extension widget without its extension left out"
+    );
+
+    state.ExtensionWidgets = {
+      [extensionWidget.extensionID]: { src: "moz-extension://uuid/w.html" },
+    };
+    await instance.onAction({
+      type: actionTypes.WIDGETS_EXTENSIONS_UPDATE,
+      data: state.ExtensionWidgets,
+    });
+
+    Assert.deepEqual(
+      Glean.newtab.widgetsEnabledList.testGetValue(),
+      ["lists", "extension_widget"],
+      "extension widget listed"
+    );
+  } finally {
+    WIDGET_REGISTRY.splice(WIDGET_REGISTRY.indexOf(extensionWidget), 1);
+  }
 });
 
 add_task(async function test_recordEnabledWidgets_trainhop() {

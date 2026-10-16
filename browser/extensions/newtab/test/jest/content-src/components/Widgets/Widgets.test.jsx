@@ -4,6 +4,7 @@ import { Provider } from "react-redux";
 import { createStore, combineReducers } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
+import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
 import {
   Widgets,
   resetTimerToDefaults,
@@ -75,6 +76,7 @@ const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
 const PREF_WIDGETS_STOCKS_ENABLED = "widgets.stocks.enabled";
 const PREF_WIDGETS_RECENT_SEARCHES_ENABLED = "widgets.recentSearches.enabled";
 const PREF_WIDGETS_HOROSCOPES_ENABLED = "widgets.horoscopes.enabled";
+const PREF_WIDGETS_TRAVEL_ENABLED = "widgets.travel.enabled";
 const PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED =
   "widgets.pictureOfTheDay.enabled";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
@@ -146,6 +148,19 @@ describe("<Widgets>", () => {
     const { container } = renderWidgets(state);
     expect(container.querySelector(".lists.widget")).toBeInTheDocument();
     expect(container.querySelector(".crossword")).not.toBeInTheDocument();
+  });
+
+  it("should render <Travel> under Nova when its prefs are enabled", () => {
+    const state = widgetsState({
+      "nova.enabled": true,
+      [PREF_WIDGETS_ENABLED]: true,
+      [PREF_WIDGETS_TRAVEL_ENABLED]: true,
+      "widgets.system.travel.enabled": true,
+    });
+    const { container } = renderWidgets(state);
+    expect(
+      container.querySelector("article.travel.widget")
+    ).toBeInTheDocument();
   });
 
   it("should render and show <FocusTimer> if timer prefs are enabled", () => {
@@ -260,7 +275,7 @@ describe("<Widgets> handleHideAllWidgets", () => {
   }
 
   function expectAllWidgetPrefsDisabled(calls) {
-    expect(calls).toHaveLength(9);
+    expect(calls).toHaveLength(10);
     for (const name of [
       PREF_WIDGETS_LISTS_ENABLED,
       PREF_WIDGETS_TIMER_ENABLED,
@@ -271,6 +286,7 @@ describe("<Widgets> handleHideAllWidgets", () => {
       PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED,
       PREF_WIDGETS_RECENT_SEARCHES_ENABLED,
       PREF_WIDGETS_HOROSCOPES_ENABLED,
+      PREF_WIDGETS_TRAVEL_ENABLED,
     ]) {
       const call = calls.find(action => action.data?.name === name);
       expect(call).toBeDefined();
@@ -1079,6 +1095,57 @@ describe("<Widgets> overflow detection", () => {
     // Sizes don't affect the count.
     expect(section.hasAttribute("data-overflow-3")).toBe(true);
     expect(section.hasAttribute("data-overflow-4")).toBe(false);
+  });
+});
+
+describe("<Widgets> extension widget", () => {
+  const EXTENSION_ID = "fixture-widget@mozilla.org";
+  const EXTENSION_SRC = "moz-extension://uuid/widget.html";
+  const EXTENSION_WIDGET = {
+    id: "extensionWidget",
+    enabledPref: "widgets.extensionWidget.enabled",
+    systemEnabledPref: "widgets.system.extensionWidget.enabled",
+    defaultSize: "large",
+    extensionID: EXTENSION_ID,
+  };
+
+  beforeAll(() => {
+    WIDGET_REGISTRY.push(EXTENSION_WIDGET);
+  });
+
+  afterAll(() => {
+    WIDGET_REGISTRY.splice(WIDGET_REGISTRY.indexOf(EXTENSION_WIDGET), 1);
+  });
+
+  function extensionWidgetState(extensionWidgets) {
+    return {
+      ...makeNovaWidgetState([["lists", "medium"]], {
+        "widgets.extensionWidget.enabled": true,
+        "widgets.system.extensionWidget.enabled": true,
+      }),
+      ExtensionWidgets: extensionWidgets,
+    };
+  }
+
+  it("renders a padded moz-widget card carrying its extension's widget src and size", () => {
+    const { container } = renderWidgets(
+      extensionWidgetState({
+        [EXTENSION_ID]: { src: EXTENSION_SRC, name: "Tally" },
+      })
+    );
+    const card = container.querySelector(
+      'moz-widget[widget-id="extensionWidget"]'
+    );
+    expect(card.getAttribute("src")).toBe(EXTENSION_SRC);
+    expect(card.getAttribute("size")).toBe("large");
+    expect(card.hasAttribute("padded")).toBe(true);
+  });
+
+  it("renders nothing while ExtensionWidgets has no entry for its extension", () => {
+    const { container } = renderWidgets(extensionWidgetState({}));
+    expect(
+      container.querySelector('[data-widget-id="extensionWidget"]')
+    ).not.toBeInTheDocument();
   });
 });
 

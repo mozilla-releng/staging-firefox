@@ -92,6 +92,7 @@ export const UI_UPDATE_TYPES = {
   CONFIRM_TAB_GROUP_SELECTION: "confirm-tab-group-selection",
   CONFIRM_OPEN_AND_GROUP_TABS_SELECTION:
     "confirm-open-and-group-tabs-selection",
+  TOGGLE_ALL_TAB_SELECTION: "toggle-all-tab-selection",
   UNDO_TAB_CLOSE: "undo-tab-close",
   UNDO_TAB_GROUP: "undo-tab-group",
   RETRY_PROMPT: "retry-prompt",
@@ -112,6 +113,21 @@ export const CONFIRMATION_UI_TYPES = [
 const PROMPT_ACTION_BY_UI_TYPE = {
   [UI_TYPES.WEBSITE_CONFIRMATION]: "close_tabs",
   [UI_TYPES.TAB_GROUP_CONFIRMATION]: "group_tabs",
+};
+
+/**
+ * `prompt_type` values recorded on the tab confirmation telemetry events.
+ */
+const PROMPT_TYPES = {
+  SAFETY_CONFIRMATION: "safety_confirmation",
+};
+
+/**
+ * `toggle` values recorded when "Select all" or "Deselect all" is clicked.
+ */
+const TOGGLE_ALL_TYPES = {
+  SELECT_ALL: "select_all",
+  DESELECT_ALL: "deselect_all",
 };
 
 /**
@@ -311,7 +327,7 @@ export class ToolUI {
       chat_id: conversation.id,
       message_seq: conversation.messageCount,
       action: actionType,
-      prompt_type: "safety_confirmation",
+      prompt_type: PROMPT_TYPES.SAFETY_CONFIRMATION,
       response,
       selected,
       reason,
@@ -549,6 +565,39 @@ export class ToolUI {
       { description: "User cancelled the tab action. No action was taken." },
       toolCallId
     );
+    return true;
+  }
+
+  /**
+   * Handler for "Select all" / "Deselect all" on a tab confirmation. Only
+   * records telemetry. The card keeps track of its own selection.
+   *
+   * @param {HandlerContext & {updateData: {allSelected: boolean}}} context -
+   *   Handler context, where allSelected is true when the click selected
+   *   every tab
+   * @returns {boolean} True if the click was recorded
+   * @private
+   */
+  static #handleToggleAllTabSelection(context) {
+    const { message, conversation, updateData, mode } = context;
+    const { toolUIData } = message;
+    const action = this.#promptActionForUIData(toolUIData);
+    if (!action) {
+      return false;
+    }
+
+    lazy.ToolUITelemetry.recordBrowserActionPromptToggleAll({
+      location: mode,
+      chat_id: conversation.id,
+      message_seq: conversation.messageCount,
+      action,
+      prompt_type: PROMPT_TYPES.SAFETY_CONFIRMATION,
+      entrypoint: toolUIData.isResumeActivity ? "resume" : "browser_action",
+      toggle: updateData?.allSelected
+        ? TOGGLE_ALL_TYPES.SELECT_ALL
+        : TOGGLE_ALL_TYPES.DESELECT_ALL,
+      candidates: toolUIData.properties?.tabs?.length ?? 0,
+    });
     return true;
   }
 
@@ -1205,7 +1254,7 @@ export class ToolUI {
     lazy.ToolUITelemetry.recordBrowserActionPrompt({
       ...telemetryData,
       action: actionType,
-      prompt_type: "safety_confirmation",
+      prompt_type: PROMPT_TYPES.SAFETY_CONFIRMATION,
       reason,
       candidates: tabs.length,
       preselected: 0, // we currently don't preselect any tabs
@@ -1309,6 +1358,8 @@ export class ToolUI {
       this.#handleConfirmTabGroupSelection.bind(this),
     [UI_UPDATE_TYPES.CONFIRM_OPEN_AND_GROUP_TABS_SELECTION]:
       this.#handleOpenAndGroupTabsSelection.bind(this),
+    [UI_UPDATE_TYPES.TOGGLE_ALL_TAB_SELECTION]:
+      this.#handleToggleAllTabSelection.bind(this),
     [UI_UPDATE_TYPES.UNDO_TAB_CLOSE]: this.#handleUndoTabClose.bind(this),
     [UI_UPDATE_TYPES.UNDO_TAB_GROUP]: this.#handleUndoTabGroup.bind(this),
     [UI_UPDATE_TYPES.RETRY_PROMPT]: this.#handleRetryPrompt.bind(this),

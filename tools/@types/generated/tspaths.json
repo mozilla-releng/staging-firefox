@@ -6670,12 +6670,6 @@
       "resource://gre/modules/launchonlogin/WindowsLaunchOnLogin.sys.mjs": [
         "../../../toolkit/modules/launchonlogin/WindowsLaunchOnLogin.sys.mjs"
       ],
-      "resource://gre/modules/media/IdpSandbox.sys.mjs": [
-        "../../../dom/media/IdpSandbox.sys.mjs"
-      ],
-      "resource://gre/modules/media/PeerConnectionIdp.sys.mjs": [
-        "../../../dom/media/PeerConnectionIdp.sys.mjs"
-      ],
       "resource://gre/modules/megalist/MegalistViewModel.sys.mjs": [
         "../../../toolkit/components/satchel/megalist/MegalistViewModel.sys.mjs"
       ],
@@ -7012,6 +7006,9 @@
       "resource://newtab/lib/SmartShortcutsRanker/ThomSample.mjs": [
         "../../../browser/extensions/newtab/lib/SmartShortcutsRanker/ThomSample.mjs"
       ],
+      "resource://newtab/lib/SponsoredTopSitesScoreProvider/SponsoredTopSitesScoreProvider.mjs": [
+        "../../../browser/extensions/newtab/lib/SponsoredTopSitesScoreProvider/SponsoredTopSitesScoreProvider.mjs"
+      ],
       "resource://newtab/lib/StartupCacheInit.sys.mjs": [
         "../../../browser/extensions/newtab/lib/StartupCacheInit.sys.mjs"
       ],
@@ -7134,9 +7131,6 @@
       ],
       "resource://normandy/lib/CleanupManager.sys.mjs": [
         "../../../toolkit/components/normandy/lib/CleanupManager.sys.mjs"
-      ],
-      "resource://normandy/lib/ClientEnvironment.sys.mjs": [
-        "../../../toolkit/components/normandy/lib/ClientEnvironment.sys.mjs"
       ],
       "resource://normandy/lib/EventEmitter.sys.mjs": [
         "../../../toolkit/components/normandy/lib/EventEmitter.sys.mjs"

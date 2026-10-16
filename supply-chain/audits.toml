@@ -1771,9 +1771,9 @@ criteria = "safe-to-deploy"
 delta = "0.6.1 -> 0.8.0"
 
 [[audits.crash-context]]
-who = "Chris Martin <marti4d@live.ca>"
+who = "Simon Chopin <chopin.simon@gmail.com>"
 criteria = "safe-to-deploy"
-delta = "0.8.0 -> 0.8.0@git:6744feee58804a78730d176cdcc31bb4f3021107"
+delta = "0.8.0 -> 0.8.0@git:3ab1604f91db05ec3f3a84d779a2871df7d9afd7"
 importable = false
 
 [[audits.crc32fast]]
@@ -3573,6 +3573,11 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-run"
 delta = "1.7.1 -> 1.8.0"
 
+[[audits.humantime]]
+who = "Max Inden <mail@max-inden.de>"
+criteria = "safe-to-deploy"
+version = "2.4.0"
+
 [[audits.hyper]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-run"
@@ -4771,11 +4776,11 @@ delta = "0.12.0 -> 0.13.0"
 notes = "This crate is mostly maintained by Mozilla staff"
 
 [[audits.minidump-writer]]
-who = "Chris Martin <marti4d@live.ca>"
+who = "Simon Chopin <chopin.simon@gmail.com>"
 criteria = "safe-to-deploy"
-delta = "0.13.0 -> 0.13.0@git:6744feee58804a78730d176cdcc31bb4f3021107"
+delta = "0.13.0 -> 0.13.0@git:3ab1604f91db05ec3f3a84d779a2871df7d9afd7"
 importable = false
-notes = "This crate is mostly maintained by Mozilla staff."
+notes = "All the diff was written and reviewed by Mozilla staff."
 
 [[audits.miniz_oxide]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -5002,7 +5007,7 @@ delta = "0.3.0 -> 0.4.1"
 [[audits.mtu]]
 who = "Max Inden <mail@max-inden.de>"
 criteria = "safe-to-deploy"
-delta = "0.4.1 -> 0.4.1@git:28cacc8ea2b035779ae504d837e3e25331264347"
+delta = "0.4.1 -> 0.4.1@git:1ec4c2a3ccd7ada264112d1b70b070381557d844"
 importable = false
 
 [[audits.multiversion]]
@@ -5349,6 +5354,11 @@ The (non-published) `header-translator` crate that produces generated bindings
 appearing in other `objc2-*` crates was also reviewed, in lieu of a full review
 of the generated bindings.
 """
+
+[[audits.objc2]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.6.3 -> 0.6.5"
 
 [[audits.objc2-core-foundation]]
 who = "Andy Leiserson <aleiserson@mozilla.com>"
@@ -5963,6 +5973,11 @@ delta = "0.13.0 -> 0.15.2"
 who = "Oskar Mansfeld <git@omansfeld.net>"
 criteria = "safe-to-deploy"
 delta = "0.15.2 -> 0.16.0"
+
+[[audits.qlog]]
+who = "Max Inden <mail@max-inden.de>"
+criteria = "safe-to-deploy"
+delta = "0.16.0 -> 0.18.1"
 
 [[audits.quick-xml]]
 who = "Lars Eggert <lars@eggert.org>"
@@ -8032,6 +8047,11 @@ delta = "0.3.11 -> 0.3.13"
 who = "Nicolas Grunbaum <ngrunbaum@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.3.13 -> 0.3.14"
+
+[[audits.webrtc-sdp]]
+who = "Nicolas Grunbaum <ngrunbaum@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.14 -> 0.3.16"
 
 [[audits.weedle2]]
 who = "Travis Long <tlong@mozilla.com>"

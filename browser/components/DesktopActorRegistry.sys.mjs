@@ -244,6 +244,7 @@ let JSWINDOWACTORS = {
         "AIChatContent:Ready": { wantUntrusted: true },
         "AIChatContent:DispatchAction": { wantUntrusted: true },
         "AIChatContent:OpenLink": { wantUntrusted: true },
+        "AIChatContent:OpenTabGroup": { wantUntrusted: true },
         "AIChatContent:DispatchNewChat": { wantUntrusted: true },
         "AIChatContent:AccountSignIn": { wantUntrusted: true },
         "AIChatContent:ToolUIUpdate": { wantUntrusted: true },
@@ -293,6 +294,24 @@ let JSWINDOWACTORS = {
     matches: ["about:smartpage", "about:smartpage?*"],
     remoteTypes: ["privilegedabout"],
     enablePreference: "browser.smartwindow.aitab.enabled",
+  },
+
+  AgentMonitorItem: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AgentMonitorItemParent.sys.mjs",
+    },
+    child: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AgentMonitorItemChild.sys.mjs",
+      events: {
+        "agent-monitor-item:resolve-titles": { wantUntrusted: true },
+      },
+    },
+    allFrames: true,
+    matches: ["about:aichatcontent", "about:smartwindowtasks"],
+    remoteTypes: ["privilegedabout"],
+    enablePreference: "browser.smartwindow.enabled",
   },
 
   SmartWindowTasks: {

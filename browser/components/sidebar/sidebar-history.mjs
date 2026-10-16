@@ -592,6 +592,7 @@ export class SidebarHistory extends SidebarPage {
 
   #tabListTemplate(tabItems, { searchQuery, treeLevel = 1 } = {}) {
     return html`<sidebar-tab-list
+      rowsDraggable
       .handleFocusElementToCard=${this.handleFocusElementToCard}
       inTree
       .level=${treeLevel}
@@ -604,6 +605,7 @@ export class SidebarHistory extends SidebarPage {
       @fxview-tab-list-secondary-action=${this.onSecondaryAction}
       @fxview-tab-list-middleclick-action=${this.onMiddleClickAction}
       @keydown=${this.onKeyDown}
+      @dragstart=${this.#onDragStart}
     >
     </sidebar-tab-list>`;
   }
@@ -628,6 +630,21 @@ export class SidebarHistory extends SidebarPage {
       : "after_end"; // Sidebar is on the right. Open menu to the left.
     this._menu.openPopup(e.target, menuPos, 0, 0, false, false, e);
     this.menuButton.setAttribute("aria-expanded", true);
+  }
+
+  #onDragStart(e) {
+    const row = e.composedPath().find(el => el.localName === "sidebar-tab-row");
+    if (!row?.url) {
+      e.preventDefault();
+      return;
+    }
+    const { url } = row;
+    const title = row.title || url;
+    e.dataTransfer.clearData();
+    e.dataTransfer.setData(lazy.PlacesUtils.TYPE_X_MOZ_URL, url + "\n" + title);
+    e.dataTransfer.setData(lazy.PlacesUtils.TYPE_PLAINTEXT, url);
+    e.dataTransfer.effectAllowed = "copyLink";
+    e.stopPropagation();
   }
 
   willUpdate() {

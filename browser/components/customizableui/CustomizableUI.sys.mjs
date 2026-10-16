@@ -216,6 +216,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
+  "fireButtonEnabled",
+  "browser.fireButton.enabled",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
   "sidebarRevampEnabled",
   "sidebar.revamp",
   false,
@@ -374,6 +381,7 @@ var CustomizableUIInternal = {
       lazy.ippEnabled ? "ipprotection-button" : null,
       "fxa-toolbar-menu-button",
       lazy.resetPBMToolbarButtonEnabled ? "reset-pbm-toolbar-button" : null,
+      lazy.fireButtonEnabled ? "fire-button" : null,
     ].filter(name => name);
 
     this.registerArea(

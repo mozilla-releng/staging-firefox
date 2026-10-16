@@ -255,6 +255,10 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   bool IsRedirectDueToAuthRetry(uint32_t redirectFlags);
 
+  // Sets mAltDataBindingOrigin from aChannel's principal, or clears it if the
+  // principal is not one the content process could have loaded.
+  void UpdateAltDataBindingOrigin(HttpBaseChannel* aChannel);
+
   int32_t mSendWindowSize;
 
   friend class HttpBackgroundChannelParent;

@@ -299,7 +299,7 @@ class BrowserSearchTelemetryHandler {
    *
    * @param {SearchEngine} engine
    *   The engine whose search form is being visited.
-   * @param {"newtab_searchbar"|"searchbar"|"smartbar"|"urlbar"} source
+   * @param {UrlbarSapName} source
    *   Where the search form was opened from. This is a sub-set of the
    *   KNOWN_SEARCH_SOURCES.
    */

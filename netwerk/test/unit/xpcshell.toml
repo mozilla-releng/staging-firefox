@@ -1131,6 +1131,16 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 1807931
 ]
 
+["test_http3_ipv6_send_would_block.js"]
+run-sequentially = ["true"] # http3server + node server
+run-if = [
+  "!socketprocess_networking",
+]
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
+]
+
 ["test_http3_kyber.js"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64'",
@@ -1724,6 +1734,11 @@ run-if = [
 ["test_simple.js"]
 
 ["test_simple_unknown_uris.js"]
+
+["test_socket_above_fd_setsize.js"]
+run-if = [
+  "os == 'mac'",
+]
 
 ["test_sockettransportsvc_available.js"]
 

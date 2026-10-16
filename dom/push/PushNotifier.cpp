@@ -365,8 +365,21 @@ nsresult PushSubscriptionChangeDispatcher::NotifyWorkers() {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  return swm->SendPushSubscriptionChangeEvent(originSuffix, mScope,
-                                              mOldSubscription);
+  rv = swm->SendPushSubscriptionChangeEvent(originSuffix, mScope,
+                                            mOldSubscription);
+  if (rv == NS_ERROR_NOT_AVAILABLE &&
+      StaticPrefs::dom_push_window_pushmanager_enabled()) {
+    // window.pushManager subscription doesn't require a service worker,
+    // so we shouldn't fail for window-accessible scopes if there is none.
+    nsCOMPtr<nsIURI> uri;
+    MOZ_TRY(NS_NewURI(getter_AddRefs(uri), mScope));
+    nsAutoCString path;
+    uri->GetFilePath(path);
+    if (path.EqualsLiteral("/")) {
+      return NS_OK;
+    }
+  }
+  return rv;
 }
 
 PushSubscriptionModifiedDispatcher::PushSubscriptionModifiedDispatcher(

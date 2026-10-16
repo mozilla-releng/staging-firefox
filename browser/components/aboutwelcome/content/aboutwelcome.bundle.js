@@ -536,6 +536,7 @@ const MultiStageAboutWelcome = props => {
       content: currentScreen.content,
       navigate: handleTransition,
       autoAdvance: currentScreen.auto_advance,
+      autoDismiss: currentScreen.auto_dismiss,
       advanceOnExperimentLoad: currentScreen.advance_on_experiment_load,
       messageId: `${props.message_id}_${order}_${currentScreen.id}`,
       UTMTerm: props.utm_term,
@@ -1090,6 +1091,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       isSingleScreen: this.props.isSingleScreen,
       startsWithCorner: this.props.startsWithCorner,
       autoAdvance: this.props.autoAdvance,
+      autoDismiss: this.props.autoDismiss,
       advanceOnExperimentLoad: this.props.advanceOnExperimentLoad,
       navigate: this.props.navigate,
       forceHideStepsIndicator: this.props.forceHideStepsIndicator,
@@ -1321,6 +1323,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const DEFAULT_AUTO_ADVANCE_MS = 20000;
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 const CORNER_IMAGE_POSITIONS = new Set(["bottom-left", "bottom-right", "top-left", "top-right"]);
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
 const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]);
@@ -1353,6 +1356,38 @@ function resolveDirectionalImage(image) {
     ...image.rtl
   } : image;
 }
+
+/**
+ * Dismisses the message once the screen has been shown for `autoDismiss.after`
+ * milliseconds. The countdown only runs while the page is visible and restarts
+ * when it becomes visible again, so the screen can't time out while invisible
+ * in the background.
+ */
+function useAutoDismiss(autoDismiss, messageId) {
+  const after = autoDismiss?.after;
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (!Number.isFinite(after) || after < 0 || after > MAX_TIMEOUT_MS) {
+      return undefined;
+    }
+    let timer = null;
+    let dismissed = false;
+    const dismiss = () => {
+      dismissed = true;
+      _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(messageId, "auto_dismiss", "AUTO_DISMISS");
+      window.AWFinish();
+    };
+    const restartCountdown = () => {
+      clearTimeout(timer);
+      timer = !dismissed && document.visibilityState === "visible" ? setTimeout(dismiss, after) : null;
+    };
+    restartCountdown();
+    document.addEventListener("visibilitychange", restartCountdown);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", restartCountdown);
+    };
+  }, [after, messageId]);
+}
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -1362,6 +1397,7 @@ const MultiStageProtonScreen = props => {
     navigate,
     order
   } = props;
+  useAutoDismiss(props.autoDismiss, messageId);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     if (!autoAdvance && !advanceOnExperimentLoad) {
       return () => {};
@@ -2160,7 +2196,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         this.mainContentHeader = input;
       },
       "no-rdm": content.no_rdm ? "" : null
-    }, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }, content.position === "card-stack" ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "card-stack-front"
+    }) : null, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `section-main ${isEmbeddedMigration ? "embedded-migration" : ""}${isSystemPromptStyleSpotlight ? "system-prompt-spotlight" : ""}`,
       "hide-secondary-section": content.hide_secondary_section ? String(content.hide_secondary_section) : null,
       role: "document",

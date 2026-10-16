@@ -142,7 +142,7 @@ add_task(async function test_generateAITab_success() {
     );
     Assert.equal(
       result.metadata.id,
-      "hotels_in_lisbon",
+      "hotels-in-lisbon",
       "metadata id is the slugified title"
     );
     Assert.equal(result.metadata.howCreated, "chat", "howCreated is chat");
@@ -572,6 +572,38 @@ add_task(async function test_generateAITab_rejects_invalid_page() {
     Assert.ok(!result.surface, "no surface is returned on validation failure");
   } finally {
     await stopServing();
+    mockEngine.cleanupMocks();
+  }
+});
+
+add_task(async function test_generateAITab_slug_keeps_accented_letters() {
+  const mockEngine = new lazy.MockEngineManager();
+  const { url, cleanup } = servePage();
+  try {
+    const genPromise = lazy.AITab.generateAITab(
+      { urlList: [url] },
+      lazy.newConversation()
+    );
+
+    await mockEngine.respondTo({
+      purpose: lazy.MODEL_FEATURES.AITAB,
+      response: JSON.stringify({
+        ...GENERATED_SURFACE,
+        components: GENERATED_SURFACE.components.map(c =>
+          c.id == "hdr" ? { ...c, title: "Cafés in São Paulo" } : c
+        ),
+      }),
+    });
+
+    const result = await genPromise;
+    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    Assert.equal(
+      result.metadata.id,
+      "cafes-in-sao-paulo",
+      "accents are dropped but their letters are kept"
+    );
+  } finally {
+    await cleanup();
     mockEngine.cleanupMocks();
   }
 });
