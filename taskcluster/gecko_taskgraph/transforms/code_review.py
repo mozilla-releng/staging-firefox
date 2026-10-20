@@ -13,12 +13,23 @@ transforms = TransformSequence()
 @transforms.add
 def add_dependencies(config, jobs):
     for job in jobs:
-        upstream_attribute = job.pop("upstream-attribute")
-        job.setdefault("soft-dependencies", [])
-        job["soft-dependencies"] += [
-            dep_task.label
-            for dep_task in config.kind_dependencies_tasks.values()
-            if dep_task.attributes.get(upstream_attribute) is True
+        upstream_attribute = job.pop("upstream-attribute", None)
+        if upstream_attribute is not None:
+            job.setdefault("soft-dependencies", [])
+            job["soft-dependencies"] += [
+                dep_task.label
+                for dep_task in config.kind_dependencies_tasks.values()
+                if dep_task.attributes.get(upstream_attribute) is True
+            ]
+        yield job
+
+
+@transforms.add
+def format_routes(config, jobs):
+    for job in jobs:
+        job["routes"] = [
+            route.format(head_rev=config.params["head_rev"])
+            for route in job.get("routes", [])
         ]
         yield job
 
