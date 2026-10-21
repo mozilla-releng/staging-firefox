@@ -34,7 +34,7 @@ from gecko_taskgraph.util.attributes import (
 from gecko_taskgraph.util.constants import TEST_KINDS
 from gecko_taskgraph.util.hg import find_hg_revision_push_info, get_hg_commit_message
 from gecko_taskgraph.util.platforms import platform_family
-from gecko_taskgraph.util.taskcluster import find_task, insert_index
+from gecko_taskgraph.util.taskcluster import insert_index
 
 logger = logging.getLogger(__name__)
 
@@ -1283,17 +1283,17 @@ def target_tasks_searchfox(full_task_graph, parameters, graph_config):
             f"Looking for existing index {index_path} to avoid triggering redundant indexing off the same revision..."
         )
         try:
-            task = find_task(index_path)
-            print(f"Index {index_path} exists: taskId {task['taskId']}")
+            task_id = find_task_id(index_path)
+            print(f"Index {index_path} exists: taskId {task_id}")
         except TaskclusterRestFailure as e:
             if e.status_code != 404:
                 raise
             print(f"Index {index_path} doesn't exist.")
         else:
             # Find the earlier expiration time of existing tasks
-            taskdef = get_task_definition(task["taskId"])
+            taskdef = get_task_definition(task_id)
             try:
-                task_graph = get_artifact(task["taskId"], "public/task-graph.json")
+                task_graph = get_artifact(task_id, "public/task-graph.json")
             except TaskclusterRestFailure as e:
                 if e.status_code != 404:
                     raise
