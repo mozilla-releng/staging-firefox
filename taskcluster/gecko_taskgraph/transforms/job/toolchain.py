@@ -11,6 +11,7 @@ from typing import Literal, Optional, Union
 
 import taskgraph
 from mozshellutil import quote as shell_quote
+from taskgraph.util.hash import hash_paths
 from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 
 from gecko_taskgraph import GECKO
@@ -20,7 +21,6 @@ from gecko_taskgraph.transforms.job.common import (
     generic_worker_add_artifacts,
 )
 from gecko_taskgraph.util.attributes import RELEASE_PROJECTS
-from gecko_taskgraph.util.hash import hash_paths
 
 CACHE_TYPE = "toolchains.v3"
 

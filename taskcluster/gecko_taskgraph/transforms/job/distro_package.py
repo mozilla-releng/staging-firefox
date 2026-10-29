@@ -10,12 +10,12 @@ import re
 from typing import Literal, Optional
 
 import taskgraph
+from taskgraph.util.hash import hash_path
 from taskgraph.util.schema import Schema
 
 from gecko_taskgraph import GECKO
 from gecko_taskgraph.transforms.job import run_job_using
 from gecko_taskgraph.transforms.job.common import add_artifacts
-from gecko_taskgraph.util.hash import hash_path
 
 DSC_PACKAGE_RE = re.compile(".*(?=_)")
 SOURCE_PACKAGE_RE = re.compile(r".*(?=[-_]\d)")

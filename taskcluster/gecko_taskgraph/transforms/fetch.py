@@ -15,13 +15,13 @@ import taskgraph
 from mozpack import path as mozpath
 from mozshellutil import quote as shell_quote
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.hash import hash_paths
 from taskgraph.util.schema import Schema, validate_schema
 from taskgraph.util.treeherder import join_symbol
 
 import gecko_taskgraph
 from gecko_taskgraph import GECKO
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.hash import hash_paths
 
 from ..util.cached_tasks import add_optimization
 

@@ -9,14 +9,14 @@ from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph.parameters import Parameters
 from taskgraph.taskgraph import TaskGraph
 from taskgraph.util.taskcluster import get_artifact, list_task_group_incomplete_tasks
+from taskgraph.util.taskgraph import (
+    find_decision_task,
+    find_existing_tasks_from_previous_kinds,
+)
 
 from gecko_taskgraph.actions.registry import register_callback_action
 from gecko_taskgraph.decision import taskgraph_decision
 from gecko_taskgraph.util.partials import populate_release_history
-from gecko_taskgraph.util.taskgraph import (
-    find_decision_task,
-    find_existing_tasks_from_previous_kinds,
-)
 
 
 @register_callback_action(

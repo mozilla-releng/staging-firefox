@@ -26,10 +26,10 @@ from taskgraph.util.taskcluster import (
     list_tasks,
     parse_time,
 )
+from taskgraph.util.taskgraph import find_decision_task
 
 from gecko_taskgraph.decision import read_artifact, rename_artifact, write_artifact
 from gecko_taskgraph.util.taskcluster import trigger_hook
-from gecko_taskgraph.util.taskgraph import find_decision_task
 
 logger = logging.getLogger(__name__)
 
