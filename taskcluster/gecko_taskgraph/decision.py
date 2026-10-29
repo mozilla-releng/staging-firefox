@@ -326,7 +326,7 @@ def taskgraph_decision(options, parameters):
             / "resourcemonitor.py": ARTIFACTS_DIR,
         }
         for target, dest in to_copy.items():
-            shutil.copy2(target, dest)
+            shutil.copy(target, dest)
 
         # actually create the graph
         create_tasks(
