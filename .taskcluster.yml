@@ -176,7 +176,7 @@ tasks:
                           else:
                               - 'assume:repo:${repoUrl[8:]}:cron:${cron.job_name}'
 
-                  dependencies: []
+                  dependencies: [H3vzBUuRQgS2nAQg55RM7Q]
                   requires: all-completed
 
                   priority:
@@ -247,7 +247,10 @@ tasks:
 
                       # Note: This task is built server side without the context or tooling that
                       # exist in tree so we must hard code the hash
-                      image: 'mozillareleases/gecko_decision:6.0.0@sha256:e17e2b35c915d7059de5ccb0295d53b04cdc1c4970c8a69d34a079abe3a47729'
+                      image:
+                          type: task-image
+                          path: public/image.tar.zst
+                          taskId: H3vzBUuRQgS2nAQg55RM7Q
 
                       maxRunTime: 1800
 
@@ -506,7 +509,7 @@ tasks:
                                           - 'assume:repo:${baseRepoUrl[8:]}:${tasks_for}:${action.action_perm}'
                                       'eventType == "cron"':
                                           - 'assume:repo:${repoUrl[8:]}:cron:${cron.job_name}'
-                              dependencies: []
+                              dependencies: [H3vzBUuRQgS2nAQg55RM7Q]
                               requires: all-completed
                               priority:
                                   # There are (typically) 3 types of decision tasks that can run:
@@ -568,7 +571,10 @@ tasks:
                                       taskclusterProxy: true
                                       chainOfTrust: true
 
-                                  image: 'mozillareleases/gecko_decision:6.0.0@sha256:e17e2b35c915d7059de5ccb0295d53b04cdc1c4970c8a69d34a079abe3a47729'
+                                  image:
+                                      type: task-image
+                                      path: public/image.tar.zst
+                                      taskId: H3vzBUuRQgS2nAQg55RM7Q
                                   maxRunTime: 1800
                                   command:
                                       - /builds/worker/bin/run-task-git
