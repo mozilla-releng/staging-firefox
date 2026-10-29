@@ -1514,7 +1514,7 @@ def target_tasks_codereview(full_task_graph, parameters, graph_config):
 
     def filter(task):
         # Ending tasks
-        if task.label == "code-review-issues":
+        if task.label in ("code-review-issues", "code-review-watch"):
             return True
 
         # Analyzer tasks
@@ -1532,7 +1532,7 @@ def target_tasks_codereview_build_test(full_task_graph, parameters, graph_config
 
     def filter(task):
         # Ending tasks
-        if task.label == "code-review-build-test-issues":
+        if task.label in ("code-review-build-test-issues", "code-review-watch"):
             return True
 
         if task.attributes.get("code-review-build-test") is True:

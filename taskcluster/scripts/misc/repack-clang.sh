@@ -7,6 +7,9 @@ shopt -s nullglob
 
 cd $MOZ_FETCHES_DIR
 
+# change to make a clang rebuild fail
+exit 1
+
 # We have a clang toolchain in $MOZ_FETCHES_DIR/clang
 # We have some compiler-rts in $MOZ_FETCHES_DIR/compiler-rt*
 # We have some libunwinds in $MOZ_FETCHES_DIR/libunwind*

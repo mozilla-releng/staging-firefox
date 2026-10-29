@@ -44,3 +44,11 @@ tasks:
         # Publish on pulse
         routes:
             - project.relman.codereview-build-test.v1.try_ending
+
+    watch:
+        label: code-review-watch
+        description: Register this task group so that the code review bot can unblock it
+        deadline-after: 1 hour
+        expires-after: 1 day
+        routes:
+            - index.project.relman.codereview.v1.task_groups.{head_rev}
