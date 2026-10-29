@@ -1640,15 +1640,20 @@ class SystemResourceMonitor:
             SystemResourceMonitor.instance._add_marker(name, start, end, data)
 
     @staticmethod
-    def forward_marker(name, start, end, data):
+    def forward_marker(name, start, end, data, forward_to=None):
         """Like record_marker(), but when no monitor runs in this process,
         forward the marker to the monitor of a parent process accepting
         records through FORWARD_ENV, if any. This allows recording markers
-        before a process starts its own monitor, or without starting one."""
-        if SystemResourceMonitor.instance:
-            SystemResourceMonitor.instance._add_marker(name, start, end, data)
-            return
-        path = os.environ.get(FORWARD_ENV)
+        before a process starts its own monitor, or without starting one.
+
+        When forward_to is given, always forward the marker to that path
+        instead."""
+        path = forward_to
+        if path is None:
+            if SystemResourceMonitor.instance:
+                SystemResourceMonitor.instance._add_marker(name, start, end, data)
+                return
+            path = os.environ.get(FORWARD_ENV)
         if not path:
             return
         record = ["marker", name, start, end, data, SystemResourceMonitor.TASK_CATEGORY]

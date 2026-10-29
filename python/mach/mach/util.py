@@ -30,16 +30,22 @@ def resource_marker(name, text):
     try:
         yield
     finally:
-        monitor_module = sys.modules.get("mozsystemmonitor.resourcemonitor")
-        if monitor_module is None and os.environ.get("MOZ_RESOURCE_MONITOR_FORWARD"):
-            try:
-                from mozsystemmonitor import resourcemonitor as monitor_module
-            except ImportError:
-                pass
-        if monitor_module is not None:
-            monitor_module.SystemResourceMonitor.forward_marker(
-                name, start, time.monotonic(), {"type": "Text", "text": text}
-            )
+        record_resource_marker(
+            name, start, time.monotonic(), {"type": "Text", "text": text}
+        )
+
+
+def record_resource_marker(name, start, end, data):
+    """Record a marker spanning the given time.monotonic() timestamps, like
+    resource_marker() does."""
+    monitor_module = sys.modules.get("mozsystemmonitor.resourcemonitor")
+    if monitor_module is None and os.environ.get("MOZ_RESOURCE_MONITOR_FORWARD"):
+        try:
+            from mozsystemmonitor import resourcemonitor as monitor_module
+        except ImportError:
+            pass
+    if monitor_module is not None:
+        monitor_module.SystemResourceMonitor.forward_marker(name, start, end, data)
 
 
 def setenv(key, value):
