@@ -1,0 +1,22 @@
+{
+    "parameters": {
+        "base_rev": "2b71df5bf2e07525d1129be46e0ee02ec70d34d8",
+        "optimize_target_tasks": false,
+        "try_task_config": {
+            "env": {
+                "TRY_SELECTOR": "fuzzy"
+            },
+            "tasks": [
+                "perftest-android-hw-a55-aarch64-perfstats-fenix",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-cold-main-first-frame",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-cold-search-widget-first-frame",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-cold-view-nav-start",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-homeview-startup",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-newssite-applink-startup",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-shopify-applink-startup",
+                "perftest-android-hw-a55-aarch64-shippable-startup-fenix-tab-restore-startup"
+            ]
+        }
+    },
+    "version": 2
+}
