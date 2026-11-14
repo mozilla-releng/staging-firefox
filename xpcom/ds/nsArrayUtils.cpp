@@ -5,7 +5,7 @@
 #include "nsArrayUtils.h"
 
 //
-// do_QueryElementAt helper stuff
+// do_QueryElementAt helper
 //
 nsresult nsQueryArrayElementAt::operator()(const nsIID& aIID,
                                            void** aResult) const {
